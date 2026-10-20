@@ -1,0 +1,2343 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LABS Admin</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+  :root{
+    --navy:#062a6b;
+    --navy-hover:#0a3a8f;
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --line:#e5e7eb;
+    --line-soft:#eef0f3;
+    --text:#111827;
+    --text-sub:#6b7280;
+    --text-mute:#9ca3af;
+    --menu-active:#eef0f4;
+    --search-bg:#f3f4f6;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;color:var(--text);background:var(--bg);font-size:13px}
+  button{font-family:inherit;cursor:pointer}
+  input,select{font-family:inherit}
+
+  /* ===== GNB ===== */
+  .gnb{position:fixed;top:0;left:0;right:0;height:47px;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 14px;z-index:100}
+  .gnb .logo{color:#fff;font-size:16px;font-weight:800;letter-spacing:-.2px}
+  .gnb .logo span{font-weight:600}
+  .gnb .user{display:flex;align-items:center;gap:8px}
+  .gnb .user .name{color:#fff;font-size:12px;font-weight:700}
+  .gnb .user .btn-logout{height:32px;padding:0 12px;border:1px solid rgba(255,255,255,.45);border-radius:6px;background:transparent;color:#fff;font-size:12px}
+  .gnb .user .btn-logout:hover{background:rgba(255,255,255,.1)}
+
+  /* ===== LNB ===== */
+  .lnb{position:fixed;top:47px;left:0;bottom:0;width:222px;background:#fff;border-right:1px solid var(--line);overflow-y:auto;padding:14px 0}
+  .menu-group{margin-bottom:2px}
+  .menu-1{display:flex;align-items:center;justify-content:space-between;width:100%;height:46px;padding:0 18px;border:0;background:transparent;font-size:13px;font-weight:700;color:var(--text);text-align:left}
+  .menu-1:hover{background:#fafafa}
+  .menu-1 .lbl{display:flex;align-items:center;gap:8px}
+  .menu-1 svg.ico{width:16px;height:16px;stroke:#1f2937;fill:none;stroke-width:1.8}
+  .menu-1 .chev{width:12px;height:12px;stroke:#9ca3af;fill:none;stroke-width:2;transition:transform .15s}
+  .menu-group.open > .menu-1{background:var(--menu-active)}
+  .menu-group.open > .menu-1 .chev{transform:rotate(180deg)}
+  .menu-sub{display:none;padding:6px 6px 8px 18px;background:var(--menu-active)}
+  .menu-group.open .menu-sub{display:block}
+  .menu-2{display:block;width:100%;height:28px;padding:0 10px;border:0;border-radius:6px;background:transparent;font-size:11px;font-weight:600;color:#374151;text-align:left}
+  .menu-2:hover{background:#e3e6ec}
+  .menu-2.active{background:#e3e6ec;color:var(--text);font-weight:700}
+  .menu-empty{padding:6px 10px;font-size:11px;color:var(--text-mute)}
+
+  /* ===== Content ===== */
+  .main{margin-left:222px;padding:47px 0 0;min-height:100%}
+  .container{max-width:1520px;margin:0 auto;padding:28px 40px 60px}
+  .page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:34px}
+  .page-head h1{font-size:18px;font-weight:700}
+  .breadcrumb{font-size:10px;color:var(--text-sub);display:flex;gap:6px;align-items:center}
+  .breadcrumb b{color:var(--text);font-weight:600}
+  .card{background:var(--panel);border-radius:18px;padding:16px 16px 24px}
+
+  /* search */
+  .search-box{background:var(--search-bg);border-radius:8px;padding:16px 16px 16px;display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:22px}
+  .search-box .field label{display:block;font-size:11px;font-weight:600;margin-bottom:8px}
+  .search-box .inputs{display:flex;gap:6px}
+  .select{height:32px;width:128px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0 10px;font-size:12px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 8 8'%3E%3Cpath d='M1 2.5l3 3 3-3' stroke='%23111' fill='none' stroke-width='1.3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+  .search-input{position:relative}
+  .search-input svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:13px;height:13px;stroke:#9ca3af;fill:none;stroke-width:2}
+  .search-input input{height:32px;width:288px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0 10px 0 30px;font-size:12px;outline:none}
+  .search-input input:focus,.select:focus{border-color:var(--navy);outline:none}
+  .search-input input::placeholder{color:var(--text-mute)}
+  .btns{display:flex;gap:6px}
+  .btn{height:32px;padding:0 13px;border-radius:6px;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:5px}
+  .btn svg{width:13px;height:13px;fill:none;stroke-width:2}
+  .btn-primary{background:var(--navy);border:1px solid var(--navy);color:#fff}
+  .btn-primary svg{stroke:#fff}
+  .btn-primary:hover{background:var(--navy-hover)}
+  .btn-line{background:#fff;border:1px solid var(--line);color:var(--text)}
+  .btn-line svg{stroke:var(--text)}
+  .btn-line:hover{background:#f9fafb}
+
+  /* table */
+  .table-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .table-head .count{font-size:11px;color:#374151}
+  .table-wrap{border:1px solid var(--line);border-radius:8px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;min-width:1200px}
+  thead th{height:36px;background:#f9fafb;font-size:10.5px;font-weight:500;color:var(--text-sub);border-bottom:1px solid var(--line);white-space:nowrap;padding:0 6px}
+  tbody td{height:43px;font-size:11px;text-align:center;border-bottom:1px solid var(--line-soft);white-space:nowrap;padding:0 6px}
+  tbody tr:last-child td{border-bottom:0}
+  tbody tr:hover td{background:#fafbfc}
+  .empty td{height:180px;color:var(--text-mute)}
+
+  /* pagination */
+  .pagination{display:flex;justify-content:center;gap:4px;margin-top:20px}
+  .pagination button{min-width:28px;height:28px;padding:0 6px;border:1px solid transparent;border-radius:6px;background:transparent;font-size:11px;color:#374151}
+  .pagination button:hover:not(:disabled){background:#f3f4f6}
+  .pagination button.on{border-color:var(--navy);color:var(--navy);font-weight:700}
+  .pagination button:disabled{color:#d1d5db;cursor:default}
+
+  /* placeholder page */
+  .placeholder{padding:120px 0;text-align:center;color:var(--text-mute);font-size:13px}
+  .placeholder b{display:block;color:var(--text);font-size:15px;margin-bottom:6px}
+
+
+
+  /* clickable rows */
+  tbody tr.clickable{cursor:pointer}
+  tbody tr.clickable:hover td{background:#f3f6fb}
+
+  /* detail page */
+  .detail-desc{font-size:12px;color:#374151;margin-bottom:10px}
+  .info-box{border-left:3px solid #d1d5db;padding:2px 0 2px 10px;display:grid;grid-template-columns:auto 1fr;column-gap:6px;row-gap:4px;font-size:12px}
+  .info-box dt{font-weight:600;color:#374151}
+  .info-box dd{color:var(--text)}
+  .info-box dd.none{color:var(--text-mute)}
+  .detail-divider{height:1px;background:var(--line);margin:18px 0 20px}
+  .section-title{font-size:13px;font-weight:700;margin-bottom:10px}
+  .section-title::before{content:'· '}
+  .detail-table{min-width:1000px}
+  .btn-sm{height:26px;padding:0 10px;font-size:11px;border-radius:5px}
+  .detail-table th.l,.detail-table td.l{text-align:left}
+  .detail-table th.r,.detail-table td.r{text-align:right;padding-right:28px}
+  .detail-foot{display:flex;justify-content:flex-end;margin-top:20px}
+  .detail-foot .btn{height:36px;padding:0 18px;font-size:12px}
+
+
+  /* 상품별 기업관리 */
+  .prod-table{min-width:1300px}
+  .prod-table th.l,.prod-table td.l{text-align:left}
+  .prod-table th.r,.prod-table td.r{text-align:right;padding-right:20px}
+  .link{color:#1d4ed8;text-decoration:underline;text-underline-offset:2px;cursor:pointer;background:none;border:0;font-size:inherit;padding:0}
+  .link:hover{color:var(--navy)}
+
+
+  /* 상품별 기업관리 상세 */
+  .tabs{display:flex;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .detail-title + .tabs{margin-top:-24px}
+  .tab{height:48px;padding:0 20px;border:0;border-bottom:2px solid transparent;background:transparent;font-size:13px;color:var(--text-sub);margin-bottom:-1px}
+  .tab.on{color:var(--text);font-weight:700;border-bottom-color:var(--text)}
+  .tab:hover:not(.on){color:var(--text)}
+  .sub-title{font-size:14px;font-weight:700;margin:28px 0 12px}
+  .tabs + .sub-title,.detail-title + .sub-title,.card > .sub-title:first-child{margin-top:0}
+  .detail-title{font-size:15px;font-weight:700;padding:8px 0 18px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .detail-title .bar{color:var(--text);margin:0 6px;font-weight:400}
+  .kv-table{width:100%;min-width:0;border:1px solid var(--line);border-radius:8px;border-collapse:separate;border-spacing:0;overflow:hidden}
+  .kv-table th{width:144px;background:#f7f7f8;text-align:left;vertical-align:top;font-size:11.5px;font-weight:600;color:var(--text);padding:12px 12px;height:39px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .kv-table td{text-align:left;font-size:11.5px;padding:0 12px;height:39px;border-bottom:1px solid var(--line);white-space:normal}
+  .kv-table tr:last-child th,.kv-table tr:last-child td{border-bottom:0}
+  .kv-table tr:hover td{background:transparent}
+  .kv-table .none{color:var(--text-mute)}
+  .text-box{border:1px solid var(--line);border-radius:8px;padding:11px 12px;font-size:11.5px;line-height:19px;min-height:39px}
+  .back-foot{border-top:1px solid var(--line);margin-top:20px;padding-top:16px}
+  .back-foot .btn{height:32px;font-size:11px}
+
+
+  .scroll-box{max-height:640px;overflow:auto}
+  .scroll-box thead th{position:sticky;top:0;z-index:1}
+  .scroll-box th.l,.scroll-box td.l{text-align:left}
+
+
+  /* 임직원 정보 */
+  .sub-head{display:flex;align-items:center;justify-content:space-between;margin:0 0 12px}
+  .sub-head .sub-title{margin:0}
+  .tabs + .sub-head{margin-top:0}
+  .sub-head + *{margin-top:0}
+  .kv-2col th{width:108px}
+  .kv-2col td{width:calc(50% - 108px)}
+  .kv-2col th:nth-of-type(2){border-left:1px solid var(--line)}
+  .kv-table + .kv-table{margin-top:20px}
+  .kv-table + .sub-head,.kv-table + .sub-title{margin-top:28px}
+  .chip{display:inline-flex;align-items:center;height:22px;padding:0 9px;border-radius:11px;background:#f3f4f6;font-size:11px;color:#374151}
+  .chip.off{background:#fef2f2;color:#b91c1c}
+  .emp-table{min-width:1300px}
+
+
+  .summary-table{min-width:0}
+  .summary-table thead th{background:#f7f7f8;height:34px;font-size:10.5px;color:var(--text);font-weight:600}
+  .summary-table td{height:38px;font-size:12px}
+  .summary-table tr:hover td{background:transparent}
+  .course-table{min-width:1250px}
+  .course-table th.l,.course-table td.l{text-align:left}
+  .course-table th.r,.course-table td.r{text-align:right;padding-right:18px}
+
+
+  /* 과정별 학습현황 */
+  .filter-box{background:var(--search-bg);border-radius:8px;padding:16px;margin-bottom:18px}
+  .filter-row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap}
+  .filter-row + .filter-row{margin-top:14px}
+  .filter-row .field label{display:block;font-size:11px;font-weight:600;margin-bottom:8px}
+  .filter-row .inputs{display:flex;gap:6px;align-items:center}
+  .filter-row .btns{margin-left:auto}
+  .select.wide{width:216px}
+  .select.mid{width:116px}
+  .select:disabled{background-color:#f3f4f6;color:var(--text-mute);cursor:not-allowed}
+  .date-range{display:flex;align-items:center;gap:6px;height:32px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0 10px;font-size:12px}
+  .date-range input{border:0;font-size:12px;font-family:inherit;outline:none;width:120px;color:var(--text)}
+  .search-input.sm input{width:216px}
+  .lc-table{min-width:1300px}
+  .lc-table th.l,.lc-table td.l{text-align:left}
+  .lc-table td.num,.lc-table th.num{width:56px;padding:0 4px}
+  .summary-table + .table-head{margin-top:0}
+
+
+  .lcd-sum{min-width:1300px}
+  .lcd-sum thead th{background:#f9fafb}
+  .lcd-sum th.l,.lcd-sum td.l{text-align:left;padding-left:16px}
+  .lcd-sum td{height:58px}
+  .lcd-sum tr:hover td{background:transparent}
+  .list-foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px}
+  .list-foot .total{font-size:11px;color:#374151}
+  .list-foot-r{display:flex;align-items:center;gap:6px}
+  .list-foot .per{font-size:11px;margin-right:8px}
+
+  .tabs-wide .tab{min-width:130px}
+  .table-head .btns{display:flex;gap:6px}
+
+
+  /* 연수원 상세(관리) */
+  .acc{border:1px solid var(--line);border-radius:8px;margin-bottom:12px;overflow:hidden}
+  .acc-head{display:flex;align-items:center;justify-content:space-between;width:100%;height:46px;padding:0 16px;border:0;background:#f7f7f8;font-size:13px;font-weight:700;text-align:left}
+  .acc-head svg{width:12px;height:12px;stroke:#111;fill:none;stroke-width:1.6;transform:rotate(180deg);transition:.15s}
+  .acc.open .acc-head{border-bottom:1px solid var(--line)}
+  .acc.open .acc-head svg{transform:none}
+  .acc-body{padding:16px}
+  .form-table th{vertical-align:top;padding-top:14px}
+  .form-table th i{color:#dc2626;font-style:normal;margin-left:2px}
+  .form-table td{padding:10px 12px;height:auto}
+  .input{height:32px;width:100%;border:1px solid var(--line);border-radius:6px;padding:0 10px;font-size:12px;font-family:inherit;outline:none}
+  .input:focus{border-color:var(--navy)}
+  .inline{display:flex;align-items:center;gap:8px}
+  .suffix{font-size:12px;color:var(--text-sub)}
+  .hint{font-size:10.5px;color:var(--text-mute);margin-top:6px}
+  .corp-pick{display:grid;grid-template-columns:1fr 300px;gap:14px}
+  .corp-list{max-height:320px;overflow:auto;min-height:120px}
+  .corp-list thead th{position:sticky;top:0}
+  .picked{font-size:11px;font-weight:600}
+  .corp-selected{background:#f7f7f8;border:1px solid var(--line);border-radius:8px;padding:14px}
+  .cs-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px}
+  .cs-head span{font-size:11px;color:var(--text-sub)}
+  .cs-card{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin-bottom:6px}
+  .cs-card b{display:block;font-size:12px}
+  .cs-card small{font-size:10.5px;color:var(--text-mute)}
+  .icon-btn{border:0;background:transparent;width:24px;height:24px}
+  .icon-btn svg{width:15px;height:15px;stroke:#111;fill:none;stroke-width:1.8}
+  .form-foot{display:flex;justify-content:flex-end;gap:6px;margin-top:20px}
+  .form-foot .btn{height:36px;padding:0 15px;font-size:12px}
+
+
+  .cls-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+  .cls-boxes div{background:#f7f7f8;border-radius:6px;padding:8px 12px;font-size:12px;min-height:46px}
+  .cls-boxes small{display:block;font-size:10.5px;color:var(--text-mute);margin-bottom:3px}
+  .inline .input{flex:1}
+  .input[readonly]{background:#fff;cursor:default}
+  .back-foot.split{display:flex;justify-content:space-between;align-items:center}
+  .back-foot.split .btn{height:36px;padding:0 15px;font-size:12px}
+
+
+  .archive-sum th,.archive-sum td{border-right:1px solid var(--line)}
+  .archive-sum th:last-child,.archive-sum td:last-child{border-right:0}
+  .archive-sum{table-layout:fixed}
+  .archive-sum td{height:54px}
+
+  .radio-row{height:32px;gap:16px}
+  #atBody td{white-space:normal;word-break:keep-all;line-height:1.4}
+  .filter-row .field .radio-row label{display:inline-flex;margin:0;font-size:12px;font-weight:400;gap:6px}
+  .filter-row .field .radio-row input:checked{accent-color:#374151}
+
+  .title-sub{font-size:13px;font-weight:500;color:var(--text-sub);margin-left:10px}
+
+  /* modal */
+  .dim{position:fixed;inset:0;background:rgba(17,24,39,.35);display:none;align-items:center;justify-content:center;z-index:300}
+  .dim.show{display:flex}
+  .modal{width:432px;background:#fff;border-radius:8px;box-shadow:0 12px 32px rgba(0,0,0,.18);padding:20px 18px 18px}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:38px}
+  .modal-head h2{font-size:15px;font-weight:700}
+  .modal-close{width:24px;height:24px;border:0;background:transparent;display:flex;align-items:center;justify-content:center}
+  .modal-close svg{width:14px;height:14px;stroke:#111;stroke-width:2;fill:none}
+  .modal-body{font-size:12px;color:#374151;line-height:24px;margin-bottom:28px}
+  .modal-foot{display:flex;justify-content:flex-end;gap:6px}
+  .modal-foot .btn{height:36px;padding:0 15px;font-size:12px}
+  .modal-lg{width:760px;max-height:calc(100vh - 80px);display:flex;flex-direction:column}
+  .modal-lg .modal-head{margin-bottom:20px}
+  .modal-lg .modal-scroll{overflow-y:auto;flex:1;margin:0 -2px;padding:0 2px}
+  .modal-lg .sub-title{margin:20px 0 10px}
+  .modal-lg .sub-title:first-child{margin-top:0}
+  .modal-lg .modal-foot{border-top:1px solid var(--line);padding-top:16px;margin-top:20px}
+  .setting-table{min-width:0}
+  .setting-table thead th{background:#f7f7f8;height:40px}
+  .setting-table th.l,.setting-table td.l{text-align:left;padding-left:18px}
+  .setting-table td{height:47px;font-size:12px}
+  .setting-table td:has(.toggle){text-align:right;padding-right:22px}
+  .setting-table tr:hover td{background:transparent}
+  .yn{display:inline-flex;gap:14px;align-items:center}
+  .yn label{display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer}
+  .yn input{width:15px;height:15px;margin:0;accent-color:#374151;cursor:pointer}
+  .yn input:checked + *{font-weight:700}
+  .toggle-list{border:1px solid var(--line);border-radius:10px}
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .toggle-row:last-child{border-bottom:0}
+  .toggle-title{font-size:13px;font-weight:700;margin-bottom:8px}
+  .toggle-desc{font-size:11.5px;color:var(--text-mute)}
+  .toggle{display:inline-flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0}
+  .toggle-state{font-size:12px;font-weight:600;min-width:52px;text-align:right}
+  .toggle input{display:none}
+  .switch{position:relative;width:40px;height:22px;border-radius:11px;background:#ececee;border:1px solid #e2e2e5;transition:.15s}
+  .switch::before{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.2);transition:.15s}
+  .switch::after{content:'✕';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:8px;color:#9ca3af}
+  .toggle input:checked + .switch{background:#27272a;border-color:#27272a}
+  .toggle input:checked + .switch::before{left:20px}
+  .toggle input:checked + .switch::after{content:'✓';left:6px;right:auto;color:#fff;font-size:9px}
+  .limit-input{display:flex;align-items:center;gap:6px;margin-top:12px;font-size:12px}
+  .limit-input input{width:72px;height:30px;border:1px solid var(--line);border-radius:6px;padding:0 8px;font-size:12px;text-align:right;outline:none}
+  .limit-input input:focus{border-color:var(--navy)}
+  .limit-input.off{color:var(--text-mute)}
+  .limit-input input:disabled{background:#f3f4f6;color:var(--text-mute);cursor:not-allowed}
+  .modal-placeholder{border:1px dashed #d1d5db;border-radius:8px;padding:48px 0;text-align:center;font-size:12px;color:var(--text-mute)}
+
+  .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;opacity:0;transition:.2s;pointer-events:none;z-index:200}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ===== GNB ===== -->
+<header class="gnb">
+  <div class="logo">LABS <span>Admin</span></div>
+  <div class="user">
+    <span class="name">김아름</span>
+    <button class="btn-logout" onclick="toast('로그아웃 (프로토타입)')">로그아웃</button>
+  </div>
+</header>
+
+<!-- ===== LNB ===== -->
+<nav class="lnb" id="lnb"></nav>
+
+<!-- ===== Content ===== -->
+<main class="main">
+  <div class="container" id="page"></div>
+</main>
+
+<div class="dim" id="excelModal" onclick="if(event.target===this)closeExcelModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="excelModalTitle">
+    <div class="modal-head">
+      <h2 id="excelModalTitle">파일 생성 요청 완료</h2>
+      <button class="modal-close" onclick="closeExcelModal()" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      엑셀 파일 생성이 시작되었습니다.<br>
+      생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-line" onclick="closeExcelModal()">목록에 머물기</button>
+      <button class="btn btn-primary" onclick="goFileDownload()">파일 다운로드로 이동</button>
+    </div>
+  </div>
+</div>
+
+<!-- 학습설정 레이어 팝업 (기업별 상품 상세 > 상품 목록 > [학습설정]) -->
+<div class="dim" id="learnModal" onclick="if(event.target===this)closeLearnSetting()">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="learnModalTitle">
+    <div class="modal-head">
+      <h2 id="learnModalTitle">학습설정</h2>
+      <button class="modal-close" onclick="closeLearnSetting()" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-scroll" id="learnModalBody"></div>
+    <div class="modal-foot">
+      <button class="btn btn-line" onclick="closeLearnSetting()">취소</button>
+      <button class="btn btn-primary" onclick="saveLearnSetting()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =========================================================
+   메뉴 정의
+   - children 미정의 메뉴는 '하위 메뉴 정의 예정'으로 표시
+   ========================================================= */
+const ICONS = {
+  user:'<path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6"/>',
+  doc:'<rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M9 8h6M9 12h6M9 16h4"/>',
+  cap:'<path d="M2 9l10-5 10 5-10 5-10-5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>',
+  box:'<path d="M12 2l9 5v10l-9 5-9-5V7l9-5z"/><path d="M3 7l9 5 9-5M12 12v10"/>',
+  layer:'<path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5" opacity=".0"/>',
+  headset:'<path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="4" height="6" rx="1.5"/><rect x="17" y="14" width="4" height="6" rx="1.5"/>',
+  plus:'<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M12 8v8M8 12h8"/>'
+};
+
+const MENUS = [
+  {id:'emp',   label:'임직원 관리',     icon:'user',
+    children:[{id:'emp-list', label:'임직원 조회'}]},
+  {id:'learn', label:'학습 관리',       icon:'cap',
+    children:[{id:'learn-course', label:'과정별 학습현황'}]},
+  {id:'client',label:'거래처 관리',     icon:'doc',
+    children:[{id:'client-list', label:'거래처 목록'}]},
+  {id:'site',  label:'연수원 관리',     icon:'cap',
+    children:[{id:'site-list', label:'연수원 관리목록'}]},
+  {id:'cprod', label:'기업별 상품관리', icon:'box',
+    children:[{id:'cprod-list', label:'기업별 상품관리 목록'}]},
+  {id:'pcorp', label:'상품별 기업관리', icon:'box',
+    children:[{id:'pcorp-list', label:'상품별 기업관리 목록'}]},
+  {id:'cate',  label:'카테고리 관리',   icon:'layer'},
+  {id:'archive', label:'아카이브 현황', icon:'layer',
+    children:[{id:'archive-time', label:'학습시간 조회'}]},
+  {id:'cs',    label:'고객행복센터',    icon:'headset'},
+  {id:'contract', label:'계약관리',     icon:'doc'},
+  {id:'addon', label:'부가서비스',      icon:'plus'}
+];
+
+let openGroup = 'cprod';
+let currentPage = 'cprod-list';
+
+function renderLnb(){
+  const chev = '<svg class="chev" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3"/></svg>';
+  document.getElementById('lnb').innerHTML = MENUS.map(m => {
+    const subs = m.children
+      ? m.children.map(c => `<button class="menu-2 ${(currentPage===c.id || (c.id==='cprod-list' && currentPage==='cprod-detail') || (c.id==='pcorp-list' && currentPage==='pcorp-detail') || (c.id==='emp-list' && currentPage==='emp-detail') || (c.id==='learn-course' && currentPage==='learn-course-detail') || (c.id==='client-list' && currentPage==='client-detail') || (c.id==='archive-time' && currentPage==='archive-time-detail') || (c.id==='site-list' && currentPage==='site-manage'))?'active':''}" onclick="go('${c.id}','${m.id}')">${c.label}</button>`).join('')
+      : `<div class="menu-empty">하위 메뉴 정의 예정</div>`;
+    return `
+      <div class="menu-group ${openGroup===m.id?'open':''}">
+        <button class="menu-1" onclick="toggleGroup('${m.id}')">
+          <span class="lbl">${m.label}</span>${chev}
+        </button>
+        <div class="menu-sub">${subs}</div>
+      </div>`;
+  }).join('');
+}
+function toggleGroup(id){ openGroup = (openGroup===id) ? null : id; renderLnb(); }
+function go(pageId, groupId){ currentPage = pageId; openGroup = groupId; renderLnb(); renderPage(); }
+
+/* =========================================================
+   샘플 데이터 — 기업별 상품관리 목록
+   ========================================================= */
+// [거래처코드, 3.0기업코드, 거래처명, 연수원코드, 연수원명, 카테고리유형, 카테고리맵핑, 온라인, 마이크로, 오프라인, 하이브리드, 배송, 분류상품수, 미분류상품수, 등록일]
+const RAW = [
+  ['-',36,'-','1000227','삼성전자 연수원','표준','Y',2277,10838,0,0,359,13072,43,'2026-09-28'],
+  ['-',34,'-','1000226','LG전자 연수원','-','N',0,0,0,0,0,0,0,'2026-09-16'],
+  ['-',33,'-','1000225','SK하이닉스 연수원','-','N',0,0,0,0,0,0,0,'2026-09-07'],
+  ['-',32,'-','1000224','현대자동차 연수원','표준','N',0,0,0,0,0,0,0,'2026-09-07'],
+  ['-',31,'-','1000222','[DEV] 포스코 연수원','-','N',0,0,0,0,0,0,0,'2026-09-03'],
+  ['-',30,'-','1000221','[DEV] 롯데 연수원','-','N',0,0,0,0,0,0,0,'2026-09-01'],
+  ['-',29,'Front Test','1000193','FRONTEND 테스트 연수원','-','Y',1613,10806,20,11,352,12417,33,'2026-08-21'],
+  ['-',28,'-','1000213','Flex26 Premium 기준 연수원','-','Y',2293,10807,17,0,360,13115,2,'2026-04-21'],
+  ['-',27,'-','1000212','Flex26 Standard 기준 연수원','-','Y',2195,10800,0,0,359,12994,1,'2026-04-21'],
+  ['-',26,'-','1000211','Flex26 Basic 기준 연수원','-','Y',2118,10801,6,6,352,12918,13,'2026-04-21'],
+  ['-',25,'-','1000209','CJ제일제당 연수원 (FLEX메일)','-','Y',1962,10800,0,0,338,12759,3,'2026-04-13'],
+  ['-',24,'계열사 포함 연수원','1000204','flexqasubb 계열사 포함 연수원','표준','Y',1995,10800,1,0,340,12796,0,'2026-03-09'],
+  ['-',22,'Flex26 Premium 기준 연수원','1000203','flexqapppp Premium 연수원','-','Y',1995,10805,2,0,340,12802,0,'2026-03-05'],
+  ['-',21,'Flex26 Premium 기준 연수원','1000202','flexqappp Premium 연수원','-','Y',1995,10802,1,0,340,12798,0,'2026-03-05'],
+  // ↓ 이하 화면 캡처 범위 밖 — 목록 건수(29건) 맞춤용 가상 데이터
+  ['-',20,'-','1000201','flexqapp Premium 연수원','-','Y',1995,10800,0,0,340,12795,0,'2026-03-04'],
+  ['-',19,'-','1000199','flexqa Standard 연수원','-','Y',1980,10790,0,0,338,12768,4,'2026-02-26'],
+  ['-',18,'-','1000198','flexqa Basic 연수원','-','Y',1902,10788,0,0,331,12690,2,'2026-02-26'],
+  ['-',17,'-','1000195','QA 회귀 테스트 연수원','표준','Y',1855,10775,3,1,330,12611,8,'2026-02-11'],
+  ['-',16,'-','1000192','[DEV] 카테고리 검증 연수원','-','N',0,0,0,0,0,0,0,'2026-01-28'],
+  ['-',15,'-','1000190','배송상품 테스트 연수원','-','Y',1210,0,0,0,362,1560,12,'2026-01-15'],
+  ['-',14,'-','1000187','마이크로러닝 전용 연수원','-','Y',0,10812,0,0,0,10790,22,'2025-12-30'],
+  ['-',13,'-','1000185','오프라인 혼합 테스트 연수원','표준','Y',1540,0,24,9,0,1561,12,'2025-12-18'],
+  ['-',12,'-','1000182','하이브리드 검증 연수원','-','Y',1488,0,11,14,0,1505,8,'2025-12-02'],
+  ['-',11,'-','1000180','[DEV] 신규 연수원 템플릿','-','N',0,0,0,0,0,0,0,'2025-11-20'],
+  ['-',10,'-','1000176','표준 카테고리 기준 연수원','표준','Y',2010,10795,5,2,345,12850,7,'2025-11-05'],
+  ['-',9,'-','1000172','계열사 분리 테스트 연수원','-','Y',1764,10781,0,0,320,12571,4,'2025-10-21'],
+  ['-',8,'-','1000168','성과관리 연동 연수원','-','Y',1690,10779,2,0,318,12489,0,'2025-10-08'],
+  ['-',7,'-','1000165','[DEV] 결제 연동 연수원','-','N',0,0,0,0,0,0,0,'2025-09-24'],
+  ['-',6,'-','1000160','LABS 기본 연수원','표준','Y',2001,10790,4,1,342,12830,6,'2025-09-10']
+];
+const KEYS = ['clientCode','corpCode','clientName','siteCode','siteName','cateType','cateMap','online','micro','offline','hybrid','delivery','classified','unclassified','regDate'];
+const DATA = RAW.map(r => Object.fromEntries(KEYS.map((k,i)=>[k,r[i]])));
+
+const COLUMNS = [
+  {key:'clientCode',  label:'거래처코드'},
+  {key:'corpCode',    label:'3.0 기업코드'},
+  {key:'clientName',  label:'거래처명'},
+  {key:'siteCode',    label:'연수원코드'},
+  {key:'siteName',    label:'연수원명'},
+  {key:'cateType',    label:'카테고리 유형'},
+  {key:'cateMap',     label:'카테고리 맵핑'},
+  {key:'online',      label:'온라인',      num:true},
+  {key:'micro',       label:'마이크로',    num:true},
+  {key:'offline',     label:'오프라인',    num:true},
+  {key:'hybrid',      label:'하이브리드',  num:true},
+  {key:'delivery',    label:'배송',        num:true},
+  {key:'classified',  label:'분류 상품 수',num:true},
+  {key:'unclassified',label:'미분류 상품 수',num:true},
+  {key:'regDate',     label:'등록일'}
+];
+
+// 검색 구분 — 샘플 화면은 '기업명'만 확인됨. 나머지 옵션은 기획 확인 필요
+const SEARCH_TYPES = [
+  {value:'corpName', label:'기업명',     keys:['clientName','siteName']},
+  {value:'siteName', label:'연수원명',   keys:['siteName']},
+  {value:'siteCode', label:'연수원코드', keys:['siteCode']},
+  {value:'corpCode', label:'3.0 기업코드', keys:['corpCode']}
+];
+
+const state = { type:'corpName', keyword:'', applied:{type:'corpName', keyword:''}, page:1, size:20 };
+
+function filtered(){
+  const {type, keyword} = state.applied;
+  if(!keyword) return DATA;
+  const keys = SEARCH_TYPES.find(t=>t.value===type).keys;
+  const q = keyword.trim().toLowerCase();
+  return DATA.filter(d => keys.some(k => String(d[k]).toLowerCase().includes(q)));
+}
+
+/* =========================================================
+   페이지 렌더
+   ========================================================= */
+function renderPage(){
+  const el = document.getElementById('page');
+  window.scrollTo(0,0);
+  if(currentPage === 'cprod-detail'){ renderDetail(); return; }
+  if(currentPage === 'pcorp-list'){ renderProdList(); return; }
+  if(currentPage === 'pcorp-detail'){ renderProdDetail(); return; }
+  if(currentPage === 'emp-list'){ renderEmpList(); return; }
+  if(currentPage === 'archive-time'){ renderArchiveList(); return; }
+  if(currentPage === 'archive-time-detail'){ renderArchiveDetail(); return; }
+  if(currentPage === 'emp-detail'){ renderEmpDetail(); return; }
+  if(currentPage === 'learn-course'){ renderLearnCourse(); return; }
+  if(currentPage === 'client-list'){ renderClientList(); return; }
+  if(currentPage === 'site-list'){ renderSiteList(); return; }
+  if(currentPage === 'site-manage'){ renderSiteManage(); return; }
+  if(currentPage === 'client-detail'){ renderClientDetail(); return; }
+  if(currentPage === 'learn-course-detail'){ renderLearnCourseDetail(); return; }
+  if(currentPage !== 'cprod-list'){
+    el.innerHTML = currentPage==='file-download'
+      ? `<div class="page-head"><h1>파일 다운로드</h1><div class="breadcrumb">홈 <span>›</span> <b>파일 다운로드</b></div></div><div class="card"><div class="placeholder"><b>파일 다운로드 페이지</b>화면 정의 후 추가 예정</div></div>`
+      : `<div class="placeholder"><b>준비 중인 화면</b>화면 정의 후 추가 예정</div>`;
+    return;
+  }
+  el.innerHTML = `
+    <div class="page-head">
+      <h1>기업별 상품관리 목록</h1>
+      <div class="breadcrumb">홈 <span>›</span> 기업별 상품관리 <span>›</span> <b>기업별 상품관리 목록</b></div>
+    </div>
+    <div class="card">
+      <div class="search-box">
+        <div class="field">
+          <label>기업 검색</label>
+          <div class="inputs">
+            <select class="select" id="sType">
+              ${SEARCH_TYPES.map(t=>`<option value="${t.value}" ${state.type===t.value?'selected':''}>${t.label}</option>`).join('')}
+            </select>
+            <div class="search-input">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="sKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(state.keyword)}">
+            </div>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="doSearch()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색
+          </button>
+          <button class="btn btn-line" onclick="doReset()">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화
+          </button>
+        </div>
+      </div>
+
+      <div class="table-head">
+        <div class="count" id="count"></div>
+        <button class="btn btn-line" onclick="downloadExcel()">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>${COLUMNS.map(c=>`<th>${c.label}</th>`).join('')}</tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pagination"></div>
+    </div>`;
+
+  document.getElementById('sType').onchange = e => state.type = e.target.value;
+  const kw = document.getElementById('sKeyword');
+  kw.oninput = e => state.keyword = e.target.value;
+  kw.onkeydown = e => { if(e.key==='Enter') doSearch(); };
+  renderTable();
+}
+
+function renderTable(){
+  const rows = filtered();
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/state.size));
+  if(state.page > pages) state.page = pages;
+  const slice = rows.slice((state.page-1)*state.size, state.page*state.size);
+
+  document.getElementById('count').textContent = `검색결과 ${total}건`;
+  document.getElementById('tbody').innerHTML = total
+    ? slice.map(d => `<tr>${COLUMNS.map(c => `<td>${
+        c.key==='siteName' ? `<button class="link" onclick="openDetail('${d.siteCode}')">${escapeHtml(d.siteName)}</button>`
+        : c.num ? d[c.key].toLocaleString() : escapeHtml(String(d[c.key]))}</td>`).join('')}</tr>`).join('')
+    : `<tr class="empty"><td colspan="${COLUMNS.length}">검색 결과가 없습니다.</td></tr>`;
+
+  const p = document.getElementById('pagination');
+  let html = `<button ${state.page===1?'disabled':''} onclick="movePage(${state.page-1})">‹</button>`;
+  for(let i=1;i<=pages;i++) html += `<button class="${i===state.page?'on':''}" onclick="movePage(${i})">${i}</button>`;
+  html += `<button ${state.page===pages?'disabled':''} onclick="movePage(${state.page+1})">›</button>`;
+  p.innerHTML = html;
+}
+
+function doSearch(){ state.applied = {type:state.type, keyword:state.keyword}; state.page = 1; renderTable(); }
+function doReset(){ state.type='corpName'; state.keyword=''; state.applied={type:'corpName', keyword:''}; state.page=1; renderPage(); }
+function movePage(n){ state.page = n; renderTable(); }
+
+// 엑셀 다운로드 — 즉시 다운로드하지 않고 파일 생성 요청 후 안내 모달 노출
+// 생성 대상: 현재 적용된 검색 조건의 결과 전체(페이지 무관)
+function downloadExcel(){ document.getElementById('excelModal').classList.add('show'); }
+function closeExcelModal(){ document.getElementById('excelModal').classList.remove('show'); }
+function goFileDownload(){ closeExcelModal(); currentPage='file-download'; openGroup=null; renderLnb(); renderPage(); }
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeExcelModal(); closeLearnSetting(); } });
+
+
+/* =========================================================
+   기업별 상품 상세 (기존 레이어 팝업 → 페이지 전환)
+   - 진입: 목록 행 클릭
+   - 복귀: [목록] 버튼 → 목록의 검색조건·페이지 유지
+   ========================================================= */
+const detail = { siteCode:null, page:1, size:10 };
+
+function openDetail(siteCode){
+  detail.siteCode = siteCode; detail.page = 1;
+  currentPage = 'cprod-detail'; openGroup = 'cprod';
+  renderLnb(); renderPage();
+}
+function backToList(){ currentPage = 'cprod-list'; renderLnb(); renderPage(); }
+
+// 샘플 상품 생성 — 사용 상품 수 = '분류 상품 수' 기준(가정). 유형 비율은 목록의 유형별 수량 비례
+const NAME_POOL = ['테스트11','테스트99','웹 4.0이 온다','월급만으로는 돈이 돈을 버는 걸 절대 이기지 못한다','운명을 바꾸는 초압축 경제 공부','왜 그들만 부자가 되는가','오늘 배워 내일 써먹는 경제상식','에브리웨어 경제학','암호화폐 전쟁','암호화폐 넥스트 시나리오','리더의 질문법','데이터 리터러시 기초','엑셀 실무 함수 30선','신입사원 비즈니스 매너','팀장의 피드백 대화','생성형 AI 업무 활용','회계 기초와 재무제표 읽기','협상의 기술','문제해결 로지컬 씽킹','보고서 작성의 정석'];
+const PRICE_POOL = [[100000,80000],[100000,80000],[27000,27000],[29000,29000],[30000,30000],[33000,33000],[28000,28000],[29000,29000],[27000,27000],[27000,27000],[120000,96000],[89000,89000],[66000,59400],[45000,45000],[150000,120000],[99000,79200],[77000,77000],[110000,88000],[95000,95000],[55000,49500]];
+const TYPE_KEYS = [['online','온라인'],['micro','마이크로'],['offline','오프라인'],['hybrid','하이브리드'],['delivery','배송']];
+
+function productAt(site, i){
+  const total = site.classified;
+  const sum = TYPE_KEYS.reduce((a,[k])=>a+site[k],0) || 1;
+  let acc = 0, type = '온라인';
+  for(const [k,label] of TYPE_KEYS){ acc += site[k]/sum*total; if(i < acc){ type = label; break; } }
+  const n = (i + Number(site.siteCode)) % NAME_POOL.length;
+  return { no:i+1, code:79500 - i, type, name:NAME_POOL[n], list:PRICE_POOL[n][0], sale:PRICE_POOL[n][1], book: type==='온라인' && n>=2 && n<=9 ? 'Y':'N' };
+}
+
+function renderDetail(){
+  const site = DATA.find(d => d.siteCode === detail.siteCode);
+  const total = site.classified;
+  const pages = Math.max(1, Math.ceil(total/detail.size));
+  const start = (detail.page-1)*detail.size;
+  const rows = Array.from({length:Math.min(detail.size, total-start)}, (_,k)=>productAt(site, start+k));
+  const val = v => v==='-' ? '<span class="none">정보 없음</span>' : escapeHtml(String(v));
+
+  // 기본정보
+  const basic = `
+      <h3 class="sub-title">기본정보</h3>
+      <table class="kv-table">
+        <tr><th>거래처코드</th><td>${val(site.clientCode)}</td></tr>
+        <tr><th>거래처명</th><td>${val(site.clientName)}</td></tr>
+        <tr><th>3.0 기업코드</th><td>${val(site.corpCode)}</td></tr>
+        <tr><th>연수원코드</th><td>${val(site.siteCode)}</td></tr>
+        <tr><th>연수원명</th><td>${val(site.siteName)}</td></tr>
+      </table>`;
+
+  // 상품 상세 탭 — 상품 목록
+  const prodTab = `
+      <h3 class="sub-title">상품 목록</h3>
+      <div class="table-head"><div class="count">검색결과 ${total.toLocaleString()}건</div></div>
+      <div class="table-wrap">
+        <table class="detail-table">
+          <thead><tr>
+            <th style="width:80px">No</th><th style="width:130px">상품코드</th><th style="width:110px">상품유형</th>
+            <th class="l">상품명</th><th class="r" style="width:130px">정가</th><th class="r" style="width:130px">판매가</th><th style="width:80px">교재</th>
+          </tr></thead>
+          <tbody>
+            ${total ? rows.map(r=>`<tr>
+              <td>${r.no.toLocaleString()}</td><td>${r.code}</td><td>${r.type}</td>
+              <td class="l">${escapeHtml(r.name)}</td><td class="r">${r.list.toLocaleString()}</td><td class="r">${r.sale.toLocaleString()}</td><td>${r.book}</td>
+            </tr>`).join('') : `<tr class="empty"><td colspan="7">사용 중인 상품이 없습니다.</td></tr>`}
+          </tbody>
+        </table>
+      </div>`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>기업별 상품 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 기업별 상품관리 <span>›</span> 기업별 상품관리 목록 <span>›</span> <b>기업별 상품 상세</b></div>
+    </div>
+    <div class="card">
+      ${basic}
+      ${prodTab}
+      <div class="pagination">${pagerHtml(detail.page, pages, 'moveDetailPage')}</div>
+      <div class="back-foot"><button class="btn btn-line" onclick="backToList()"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button></div>
+    </div>`;
+}
+
+// 학습 설정 — 연수원 상세 > 4. 학습 설정 (연수원 → 가격정책별 → 학습자 입과 시 확정). 기본값 가안
+const SITE_LEARN_ITEMS = [
+  {key:'sequence', label:'순서 학습',         opts:['자율','순차']},   // opts: [꺼짐, 켜짐]
+  {key:'seek',     label:'진도바 이동 제한',  opts:['자율','제한']},
+  {key:'speed',    label:'동영상 배속 고정',  opts:['자율','고정']}
+];
+const SITE_LEARN_DEFAULT = {sequence:'자율', seek:'제한', speed:'자율'};
+// [학습설정] 레이어 팝업 — 토글형. 저장 버튼 클릭 시 일괄 적용
+// 항목 순서·문구는 캡처 기준 가안, 차시 제한은 신규 가안
+const LEARN_ITEMS = [
+  {key:'sequence', label:'학습 순서',       desc:'등록된 목차 순서대로 학습하거나 학습자의 자율에 따라 임의대로 학습하도록 설정', on:'순서 학습', off:'자율 학습'},
+  {key:'seek',     label:'진도바 이동 제한', desc:'영상 프로그레스바의 이동 허용 여부', on:'제한', off:'자율'},
+  {key:'speed',    label:'동영상 배속 고정', desc:'영상의 배속을 1배속으로 고정', on:'고정', off:'자유'},
+  {key:'limit',    label:'차시 제한',       desc:'하루에 학습할 수 있는 최대 차시 수를 제한', on:'제한', off:'제한 없음', input:true}
+];
+const LEARN_DEFAULT = {sequence:true, seek:true, speed:false, limit:false, limitCount:''};   // 기본값 — 기획 확인 필요
+const learnStore = {};   // 저장값(세션 내 유지) — key: 연수원코드_상품코드
+let learnKey = null;
+
+function openLearnSetting(code){
+  learnKey = `${detail.siteCode}_${code}`;
+  const v = learnStore[learnKey] || LEARN_DEFAULT;
+  document.getElementById('learnModalBody').innerHTML = `
+    <div class="toggle-list">
+      ${LEARN_ITEMS.map(it => `
+        <div class="toggle-row">
+          <div class="toggle-text">
+            <div class="toggle-title">${it.label}</div>
+            <div class="toggle-desc">${it.desc}</div>
+            ${it.input ? `<div class="limit-input ${v.limit?'':'off'}" id="limitInput">
+              1일 최대 <input type="number" min="1" id="limitCount" value="${v.limitCount}" placeholder="0" ${v.limit?'':'disabled'}> 차시까지 학습 가능</div>` : ''}
+          </div>
+          <label class="toggle">
+            <span class="toggle-state" id="st-${it.key}">${v[it.key] ? it.on : it.off}</span>
+            <input type="checkbox" id="tg-${it.key}" ${v[it.key]?'checked':''} onchange="onLearnToggle('${it.key}')">
+            <span class="switch"></span>
+          </label>
+        </div>`).join('')}
+    </div>`;
+  document.getElementById('learnModal').classList.add('show');
+}
+function onLearnToggle(key){
+  const it = LEARN_ITEMS.find(i=>i.key===key);
+  const on = document.getElementById('tg-'+key).checked;
+  document.getElementById('st-'+key).textContent = on ? it.on : it.off;
+  if(it.input){
+    const box = document.getElementById('limitInput'), inp = document.getElementById('limitCount');
+    box.classList.toggle('off', !on);
+    inp.disabled = !on;
+    if(on) inp.focus(); else inp.value = '';
+  }
+}
+function saveLearnSetting(){
+  const v = Object.fromEntries(LEARN_ITEMS.map(it => [it.key, document.getElementById('tg-'+it.key).checked]));
+  const cnt = document.getElementById('limitCount').value.trim();
+  if(v.limit && !(Number(cnt) >= 1)){ toast('제한할 차시 수를 1 이상 입력해주세요.'); document.getElementById('limitCount').focus(); return; }
+  v.limitCount = v.limit ? cnt : '';
+  learnStore[learnKey] = v;
+  closeLearnSetting(); toast('저장되었습니다.');
+  if(currentPage==='cprod-detail') renderDetail();
+}
+function closeLearnSetting(){ document.getElementById('learnModal').classList.remove('show'); }
+
+function moveDetailPage(n){ detail.page = n; renderDetail(); }
+
+// 10개 단위 페이지 그룹 + 처음/끝 이동
+function pagerHtml(cur, pages, fn){
+  const gStart = Math.floor((cur-1)/10)*10 + 1, gEnd = Math.min(gStart+9, pages);
+  let h = `<button ${cur===1?'disabled':''} onclick="${fn}(1)">«</button><button ${cur===1?'disabled':''} onclick="${fn}(${cur-1})">‹</button>`;
+  for(let i=gStart;i<=gEnd;i++) h += `<button class="${i===cur?'on':''}" onclick="${fn}(${i})">${i}</button>`;
+  h += `<button ${cur===pages?'disabled':''} onclick="${fn}(${cur+1})">›</button><button ${cur===pages?'disabled':''} onclick="${fn}(${pages})">»</button>`;
+  return h;
+}
+
+/* =========================================================
+   상품별 기업관리 목록
+   ========================================================= */
+// 샘플 상품 데이터 15,479건 — 상단 12건은 캡처 화면 기준, 이하 가상 데이터
+const SITE_BY_CODE = Object.fromEntries(DATA.map(d=>[d.siteCode,d]));
+const PROD_TOTAL = 15479;
+const PROD_HEAD = [
+  // [상품코드, 상품유형, 상품구분, 상품명, CP사, 카테고리, 정가, 판매가, 교재, 상태, 사용기업(연수원코드 목록)]
+  ['-','하이브리드','COURSE','과정명1','-','-',null,0,'N','DRAFT',['1000213']],
+  ['ELN000009205','온라인','COURSE','브랜드 덕후를 만드는 브랜드 커뮤니케이션','파고다에스씨에스','-',100000,80000,'Y','DRAFT',[]],
+  ['-','하이브리드','COURSE','시험테스트','-','-',null,0,'N','DRAFT',['1000193']],
+  ['ELN000009203','온라인','COURSE','test10','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009202','온라인','COURSE','test9','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009201','온라인','COURSE','test8','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009200','온라인','COURSE','test7','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009199','온라인','COURSE','test6','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009198','온라인','COURSE','test5','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009197','온라인','COURSE','test4','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009196','온라인','COURSE','test3','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  ['ELN000009195','온라인','COURSE','test2','파고다에스씨에스','-',100000,80000,'N','DRAFT',[]],
+  // ↓ 상세 화면 캡처 기준 샘플
+  ['74680','온라인','COURSE','소득혁명','가람디엠씨','직무공통',30000,30000,'Y','DRAFT',['1000227','1000213','1000212','1000211']]
+];
+const CP_POOL = ['파고다에스씨에스','휴넷','멀티캠퍼스','패스트캠퍼스','클래스101','YBM'];
+const CATE_POOL = ['직무공통','전문직무','자기개발','외국어','자격·공인과정'];
+const PTYPE_POOL = ['온라인','온라인','온라인','마이크로','마이크로','오프라인','하이브리드','배송'];
+
+
+// 사용 기업 — '소득혁명'은 캡처 화면 기준(기업명은 대표 기업명으로 치환), 그 외 상품은 연수원별 대표 기업 1개로 가정
+const ADDR = '서울특별시 구로구 디지털로26길 5 (구로동) 테스트동 1004호';
+const SODEUK_COMPANIES = [
+  [24346,'삼성전자(주)','1000227','삼성전자 연수원','-','2026-09-01'],
+  [556,'삼성전자 DS부문','1000227','삼성전자 연수원','-','2026-09-01'],
+  [557,'삼성전자 DX부문','1000227','삼성전자 연수원','-','2026-09-01'],
+  [364,'Flex26 Premium 기준 기업','1000213','Flex26 Premium 기준 연수원',ADDR,'2026-04-20'],
+  [363,'Flex26 Standard 기준 기업','1000212','Flex26 Standard 기준 연수원',ADDR,'2026-04-20'],
+  [362,'Flex26 Basic 기준 기업','1000211','Flex26 Basic 기준 연수원',ADDR,'2026-04-20'],
+  [360,'CJ제일제당(주) - flex메일','1000209','CJ제일제당 연수원 (FLEX메일)','서울특별시 강서구 수명로1길 16 (내발산동)','2026-05-01'],
+  [10,'flexqasubb 그룹사','1000204','flexqasubb 계열사 포함 연수원',ADDR,'2026-03-26'],
+  [9,'flexqapppp Premium 기업','1000203','flexqapppp Premium 연수원',ADDR,'2026-02-26'],
+  [8,'flexqappp Premium 기업','1000202','flexqappp Premium 연수원',ADDR,'2026-02-26'],
+  [6,'flexqassss Standard 기업','1000200','flexqassss Standard 연수원',ADDR,'2026-02-26'],
+  [5,'flexqasss Standard 기업','1000199','flexqasss Standard 연수원',ADDR,'2026-02-26'],
+  [3,'flexqabbbb Basic 기업','1000197','flexqabbbb Basic 연수원',ADDR,'2026-02-26'],
+  [2,'flexqabbb Basic 기업','1000196','flexqabbb Basic 연수원',ADDR,'2026-02-26'],
+  // ↓ 캡처 범위 밖 — 31건 맞춤용 가상 데이터
+  ...['LG전자(주)','SK하이닉스(주)','현대자동차(주)','포스코(주)','롯데쇼핑(주)','KT(주)','네이버(주)','카카오(주)','한화솔루션(주)','GS리테일(주)','신한은행','KB국민은행','아모레퍼시픽(주)','LG화학(주)','SK텔레콤(주)','현대모비스(주)','대한항공(주)']
+    .map((n,i)=>[300 - i*11, n, String(1000150 - i*3), n.replace(/\(주\)/,'') + ' 연수원', i%3===0 ? '-' : ADDR, `2025-${String(12 - (i%12)).padStart(2,'0')}-${String(1 + (i*3)%27).padStart(2,'0')}`])
+].map(r=>({code:r[0], name:r[1], siteCode:r[2], siteName:r[3], addr:r[4], openDate:r[5]}));
+
+function companyOfSite(d){
+  return { code: 400 + d.corpCode, name: d.siteName.replace(/연수원/,'기업').trim(), siteCode:d.siteCode, siteName:d.siteName, addr: d.cateMap==='Y' ? ADDR : '-', openDate: d.regDate };
+}
+
+function buildProducts(){
+  const list = PROD_HEAD.map(r => ({code:r[0],type:r[1],kind:r[2],name:r[3],cp:r[4],cate:r[5],list:r[6],sale:r[7],book:r[8],status:r[9],sites:r[10]}));
+  let code = 9194;
+  for(let i=list.length; i<PROD_TOTAL; i++){
+    const n = (i*7) % NAME_POOL.length;
+    const type = PTYPE_POOL[i % PTYPE_POOL.length];
+    const hybrid = type==='하이브리드';
+    const [lp, sp] = PRICE_POOL[n];
+    const sites = (i % 3 === 0) ? DATA.filter((_,k)=> (i+k) % 9 === 0).map(d=>d.siteCode) : [];
+    list.push({
+      code: hybrid ? '-' : 'ELN' + String(code--).padStart(9,'0'),
+      type, kind:'COURSE', name:NAME_POOL[n],
+      cp: hybrid ? '-' : CP_POOL[i % CP_POOL.length],
+      cate: i % 4 === 0 ? '-' : CATE_POOL[i % CATE_POOL.length],
+      list: hybrid ? null : lp, sale: hybrid ? 0 : sp,
+      book: type==='배송' ? 'Y' : (i % 11 === 0 ? 'Y' : 'N'),
+      status: i % 5 === 0 ? 'DRAFT' : 'ACTIVE',
+      sites
+    });
+  }
+  list.forEach((p,i)=>{
+    p.no = i+1;
+    p.companies = p.name==='소득혁명' ? SODEUK_COMPANIES : p.sites.map(c => companyOfSite(SITE_BY_CODE[c]));
+  });
+  return list;
+}
+const PRODUCTS = buildProducts();
+
+// 검색 구분 — 샘플 화면은 '연수원명'만 확인됨. 나머지 옵션은 기획 확인 필요
+const PROD_SEARCH_TYPES = [
+  {value:'siteName', label:'연수원명'},
+  {value:'siteCode', label:'연수원코드'},
+  {value:'prodName', label:'상품명'},
+  {value:'prodCode', label:'상품코드'}
+];
+const pstate = { type:'siteName', keyword:'', applied:{type:'siteName', keyword:''}, page:1, size:20 };
+
+function prodFiltered(){
+  const {type, keyword} = pstate.applied;
+  const q = keyword.trim().toLowerCase();
+  if(!q) return PRODUCTS;
+  if(type==='prodName') return PRODUCTS.filter(p=>p.name.toLowerCase().includes(q));
+  if(type==='prodCode') return PRODUCTS.filter(p=>p.code.toLowerCase().includes(q));
+  // 연수원명/연수원코드: 해당 연수원이 사용 중인 상품만 노출
+  const key = type==='siteName' ? 'siteName' : 'siteCode';
+  const codes = new Set(DATA.filter(d=>String(d[key]).toLowerCase().includes(q)).map(d=>d.siteCode));
+  return PRODUCTS.filter(p=>p.companies.some(c=>codes.has(c.siteCode) || String(key==='siteName'?c.siteName:c.siteCode).toLowerCase().includes(q)));
+}
+
+function discount(p){ return (p.list && p.list > 0) ? Math.round((1 - p.sale/p.list)*100) + '%' : '-'; }
+
+function renderProdList(){
+  const el = document.getElementById('page');
+  el.innerHTML = `
+    <div class="page-head">
+      <h1>상품별 기업관리 목록</h1>
+      <div class="breadcrumb">홈 <span>›</span> 상품별 기업관리 <span>›</span> <b>상품별 기업관리 목록</b></div>
+    </div>
+    <div class="card">
+      <div class="search-box">
+        <div class="field">
+          <label>기업 검색</label>
+          <div class="inputs">
+            <select class="select" id="pType">
+              ${PROD_SEARCH_TYPES.map(t=>`<option value="${t.value}" ${pstate.type===t.value?'selected':''}>${t.label}</option>`).join('')}
+            </select>
+            <div class="search-input">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="pKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(pstate.keyword)}">
+            </div>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="prodSearch()">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색
+          </button>
+          <button class="btn btn-line" onclick="prodReset()">
+            <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화
+          </button>
+        </div>
+      </div>
+
+      <div class="table-head">
+        <div class="count" id="pCount"></div>
+        <button class="btn btn-line" onclick="downloadExcel()">
+          <svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드
+        </button>
+      </div>
+      <div class="table-wrap">
+        <table class="prod-table">
+          <thead><tr>
+            <th style="width:60px">No</th><th style="width:130px">상품코드</th><th style="width:90px">상품유형</th><th style="width:90px">상품구분</th>
+            <th class="l">상품명</th><th style="width:150px">CP사</th><th style="width:110px">카테고리</th>
+            <th class="r" style="width:100px">정가</th><th class="r" style="width:100px">판매가</th><th class="r" style="width:80px">할인율</th>
+            <th style="width:60px">교재</th><th style="width:100px">상태</th><th class="r" style="width:80px">사용기업</th>
+          </tr></thead>
+          <tbody id="pBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="pPager"></div>
+    </div>`;
+  document.getElementById('pType').onchange = e => pstate.type = e.target.value;
+  const kw = document.getElementById('pKeyword');
+  kw.oninput = e => pstate.keyword = e.target.value;
+  kw.onkeydown = e => { if(e.key==='Enter') prodSearch(); };
+  renderProdTable();
+}
+
+function renderProdTable(){
+  const rows = prodFiltered();
+  const total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/pstate.size));
+  if(pstate.page > pages) pstate.page = pages;
+  const slice = rows.slice((pstate.page-1)*pstate.size, pstate.page*pstate.size);
+  const won = v => v===null ? '-' : v.toLocaleString();
+  document.getElementById('pCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('pBody').innerHTML = total
+    ? slice.map(p => `<tr>
+        <td>${p.no}</td><td>${p.code}</td><td>${p.type}</td><td>${p.kind}</td>
+        <td class="l"><button class="link" onclick="openProdDetail(${p.no})">${escapeHtml(p.name)}</button></td>
+        <td>${p.cp}</td><td>${p.cate}</td>
+        <td class="r">${won(p.list)}</td><td class="r">${won(p.sale)}</td><td class="r">${discount(p)}</td>
+        <td>${p.book}</td><td>${p.status}</td><td class="r">${p.companies.length}</td>
+      </tr>`).join('')
+    : `<tr class="empty"><td colspan="13">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('pPager').innerHTML = pagerHtml(pstate.page, pages, 'prodMovePage');
+}
+function prodSearch(){ pstate.applied = {type:pstate.type, keyword:pstate.keyword}; pstate.page = 1; renderProdTable(); }
+function prodReset(){ pstate.type='siteName'; pstate.keyword=''; pstate.applied={type:'siteName', keyword:''}; pstate.page=1; renderProdList(); }
+function prodMovePage(n){ pstate.page = n; renderProdTable(); }
+
+// 상품명 클릭 → 상품별 기업관리 상세 (탭: 상품정보 / 기업목록)
+const pdetail = { no:null, tab:'info', page:1, size:20 };
+
+// 상세 전용 필드 — '소득혁명'은 캡처 화면 값, 그 외 상품은 가상 값
+const PROD_EXTRA = {
+  '소득혁명': {
+    minutes:1200, system:'CMS', source:'19212', mapCode:'HLAP04671',
+    desc:'-',
+    summary:'"소득혁명"은 브라이언 페이지가 아버지의 죽음을 계기로 \'돈과 시간의 자유\'를 추구하며 설계한 자동 소득 시스템을 통해 평범한 회사원에서 자산가로 변모한 여정을 공유하며, 독자들에게 자동 소득 설계와 경제적 자유를 달성하기 위한 실전 로드맵을 제시하는 책이다.',
+    goal:'1) 자동소득(반복·지속 수익) 설계의 핵심 원리와 로드맵을 이해할 수 있다\n2) 시간·돈의 자유를 위한 소득 시스템 구축 단계를 정리할 수 있다\n3) 개인의 실행 계획(우선순위·실험·확장)을 수립할 수 있다',
+    feature:'-',
+    target:'1) N잡/부업·창업 관심자\n2) 직장인(소득 다각화)\n3) 개인 비즈니스/수익모델 설계를 시작하려는 학습자',
+    keyword:'-',
+    contents:'최종평가, 설문'
+  }
+};
+function extraOf(p){
+  if(PROD_EXTRA[p.name]) return PROD_EXTRA[p.name];
+  return {
+    minutes: p.type==='하이브리드' ? '-' : 60 * (1 + p.no % 20),
+    system:'CMS', source: p.code==='-' ? '-' : String(19000 + p.no),
+    mapCode: p.code==='-' ? '-' : 'HLAP' + String(4000 + p.no).padStart(5,'0'),
+    desc:'-', summary:'-', goal:'-', feature:'-', target:'-', keyword:'-', contents:'-'
+  };
+}
+
+function openProdDetail(no){ pdetail.no = no; pdetail.tab = 'info'; pdetail.page = 1; currentPage='pcorp-detail'; openGroup='pcorp'; renderLnb(); renderPage(); }
+function setProdTab(t){ pdetail.tab = t; pdetail.page = 1; renderProdDetail(); }
+function moveProdSitePage(n){ pdetail.page = n; renderProdDetail(); }
+
+function renderProdDetail(){
+  const p = PRODUCTS[pdetail.no-1];
+  const x = extraOf(p);
+  const won = v => (v===null || v===undefined) ? '-' : v.toLocaleString();
+  const row = (k,v) => `<tr><th>${k}</th><td>${escapeHtml(String(v))}</td></tr>`;
+  const textBox = (title, v) => `<h3 class="sub-title">${title}</h3><div class="text-box">${escapeHtml(String(v)).replace(/\n/g,'<br>')}</div>`;
+  const disc = discount(p);
+
+  const infoTab = `
+    <h3 class="sub-title">기본정보</h3>
+    <table class="kv-table">
+      ${row('상품명', p.name)}${row('상품코드', p.code)}${row('상품유형', p.type)}${row('상품구분', p.kind)}
+      ${row('CP사', p.cp)}${row('카테고리', p.cate)}${row('교재포함', p.book)}
+      ${row('학습시간', x.minutes==='-' ? '-' : x.minutes + '분')}
+      ${row('정가', won(p.list))}${row('판매가', won(p.sale))}${row('할인율', disc==='0%' ? '-' : disc)}${row('상태', p.status)}
+    </table>
+    <h3 class="sub-title">부가정보</h3>
+    <table class="kv-table">
+      ${row('상품 운영 시스템', x.system)}${row('연동소스', x.source)}${row('맵핑코드', x.mapCode)}${row('상품구분', p.kind)}
+    </table>
+    ${textBox('상품설명', x.desc)}${textBox('상품요약', x.summary)}${textBox('학습목표', x.goal)}
+    ${textBox('상품특징', x.feature)}${textBox('상품대상', x.target)}${textBox('상품키워드', x.keyword)}
+    ${textBox('컨텐츠명 목록', x.contents)}`;
+
+  // 기업목록 탭 — 사용 기업 전체를 스크롤 영역에 노출(페이징 없음, 캡처 기준)
+  const comps = p.companies;
+  const siteTab = `
+    <h3 class="sub-title" style="margin-top:0">사용 기업(${comps.length.toLocaleString()})</h3>
+    <div class="table-wrap scroll-box">
+      <table style="min-width:1000px">
+        <thead><tr>
+          <th style="width:100px">기업코드</th><th class="l">기업명</th><th style="width:120px">연수원코드</th>
+          <th class="l">연수원명</th><th class="l">연수원 주소</th><th style="width:130px">개설일</th>
+        </tr></thead>
+        <tbody>
+          ${comps.length ? comps.map(c=>`<tr>
+            <td>${c.code}</td><td class="l">${escapeHtml(c.name)}</td><td>${c.siteCode}</td>
+            <td class="l">${escapeHtml(c.siteName)}</td><td class="l">${escapeHtml(c.addr)}</td><td>${c.openDate}</td></tr>`).join('')
+          : `<tr class="empty"><td colspan="6">이 상품을 사용 중인 기업이 없습니다.</td></tr>`}
+        </tbody>
+      </table>
+    </div>`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>상품별 기업관리 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 상품별 기업관리 <span>›</span> 상품별 기업관리 목록 <span>›</span> <b>상세</b></div>
+    </div>
+    <div class="card">
+      <div class="detail-title">${p.code}<span class="bar">|</span>${escapeHtml(p.name)}</div>
+      <div class="tabs">
+        <button class="tab ${pdetail.tab==='info'?'on':''}" onclick="setProdTab('info')">상품정보</button>
+        <button class="tab ${pdetail.tab==='site'?'on':''}" onclick="setProdTab('site')">기업목록</button>
+      </div>
+      ${pdetail.tab==='info' ? infoTab : siteTab}
+      <div class="back-foot">
+        <button class="btn btn-line" onclick="go('pcorp-list','pcorp')">
+          <svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록
+        </button>
+      </div>
+    </div>`;
+}
+
+/* =========================================================
+   임직원 관리 > 임직원 조회 (목록: 캡처 없음 — 가안 / 상세: 캡처 기준)
+   ========================================================= */
+// 가상 임직원 데이터 — 개인정보 아님(임의 생성)
+const EMP_LAST = ['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권'];
+const EMP_FIRST = ['민준','서연','도윤','하은','지호','서윤','예준','지유','시우','수아','주원','지민','하준','채원','은우'];
+const DEPTS = ['-','인사팀','교육팀','영업1팀','마케팅팀','재무팀','개발팀','품질관리팀'];
+const RANKS = ['-','사원','주임','대리','과장','차장','부장'];
+function buildEmployees(){
+  const sites = DATA.filter(d => d.cateMap==='Y');
+  return Array.from({length:137}, (_,i) => {
+    const site = sites[i % sites.length];
+    const comp = companyOfSite(site);
+    const day = String(1 + (i*7)%28).padStart(2,'0'), mon = String(1 + (i*5)%10).padStart(2,'0');
+    return {
+      id:i+1,
+      name: EMP_LAST[i % EMP_LAST.length] + EMP_FIRST[(i*4) % EMP_FIRST.length],
+      loginId: `user${String(i+1).padStart(3,'0')}@example.com`,
+      empNo: String(202101 + i),
+      siteCode: site.siteCode, siteName: site.siteName,
+      corpCode: comp.code, corpName: comp.name,
+      tenantId: 'labs' + site.siteCode.slice(-3),
+      dept: DEPTS[i % DEPTS.length], rank: RANKS[(i*3) % RANKS.length],
+      mobile: '010' + String(10000000 + (i*7919)%90000000).padStart(8,'0'),
+      tel: i % 3 === 0 ? '-' : `02-123-${String(4500 + i).padStart(4,'0')}`,
+      addr: i % 4 === 0 ? '-' : '01010 서울시 구로구 디지털로 26길 5 에이스하이엔드타워 1차 8층',
+      status: i % 9 === 0 ? '퇴직' : '재직',
+      regAt: `2026.${mon}.${day} 18:00`, updAt: `2026.${mon}.${day} 18:00`
+    };
+  });
+}
+const EMPLOYEES = buildEmployees();
+
+const EMP_SEARCH_TYPES = [
+  {value:'name', label:'이름'}, {value:'loginId', label:'아이디'}, {value:'empNo', label:'사번'},
+  {value:'siteName', label:'연수원명'}, {value:'corpName', label:'기업명'}
+];
+const estate = { type:'name', keyword:'', applied:{type:'name', keyword:''}, page:1, size:20 };
+function empFiltered(){
+  const {type, keyword} = estate.applied; const q = keyword.trim().toLowerCase();
+  return q ? EMPLOYEES.filter(e => String(e[type]).toLowerCase().includes(q)) : EMPLOYEES;
+}
+
+function renderEmpList(){
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>임직원 조회</h1>
+      <div class="breadcrumb">홈 <span>›</span> 임직원 관리 <span>›</span> <b>임직원 조회</b></div>
+    </div>
+    <div class="card">
+      <div class="search-box">
+        <div class="field">
+          <label>임직원 검색</label>
+          <div class="inputs">
+            <select class="select" id="eType">${EMP_SEARCH_TYPES.map(t=>`<option value="${t.value}" ${estate.type===t.value?'selected':''}>${t.label}</option>`).join('')}</select>
+            <div class="search-input">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="eKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(estate.keyword)}">
+            </div>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="empSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+          <button class="btn btn-line" onclick="empReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+        </div>
+      </div>
+      <div class="table-head">
+        <div class="count" id="eCount"></div>
+        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+      </div>
+      <div class="table-wrap">
+        <table class="emp-table">
+          <thead><tr><th>No</th><th>이름</th><th>아이디</th><th>사번</th><th>연수원코드</th><th>연수원명</th><th>기업코드</th><th>기업명</th><th>부서</th><th>직급</th><th>근무상태</th><th>등록일</th></tr></thead>
+          <tbody id="eBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="ePager"></div>
+    </div>`;
+  document.getElementById('eType').onchange = e => estate.type = e.target.value;
+  const kw = document.getElementById('eKeyword');
+  kw.oninput = e => estate.keyword = e.target.value;
+  kw.onkeydown = e => { if(e.key==='Enter') empSearch(); };
+  renderEmpTable();
+}
+function renderEmpTable(){
+  const rows = empFiltered(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/estate.size));
+  if(estate.page > pages) estate.page = pages;
+  const slice = rows.slice((estate.page-1)*estate.size, estate.page*estate.size);
+  document.getElementById('eCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('eBody').innerHTML = total ? slice.map((e,i) => `<tr>
+      <td>${(estate.page-1)*estate.size + i + 1}</td>
+      <td><button class="link" onclick="openEmpDetail(${e.id})">${e.name}</button></td>
+      <td>${e.loginId}</td><td>${e.empNo}</td><td>${e.siteCode}</td><td>${escapeHtml(e.siteName)}</td>
+      <td>${e.corpCode}</td><td>${escapeHtml(e.corpName)}</td><td>${e.dept}</td><td>${e.rank}</td>
+      <td><span class="chip ${e.status==='재직'?'':'off'}">${e.status}</span></td><td>${e.regAt.slice(0,10)}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="12">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('ePager').innerHTML = pagerHtml(estate.page, pages, 'empMovePage');
+}
+function empSearch(){ estate.applied = {type:estate.type, keyword:estate.keyword}; estate.page = 1; renderEmpTable(); }
+function empReset(){ estate.type='name'; estate.keyword=''; estate.applied={type:'name', keyword:''}; estate.page=1; renderEmpList(); }
+function empMovePage(n){ estate.page = n; renderEmpTable(); }
+
+// 임직원 정보 (탭: 임직원 정보 / 수강 정보)
+const edetail = { id:null, tab:'info', page:1, size:20 };
+function openEmpDetail(id){ edetail.id = id; edetail.tab = 'info'; currentPage='emp-detail'; openGroup='emp'; renderLnb(); renderPage(); }
+function setEmpTab(t){ edetail.tab = t; edetail.page = 1; renderEmpDetail(); }
+// 아카이브 현황 — 가상 데이터(초 단위). 1행 = 과목 × 학습 날짜
+// 누적시간 = 아카이브 인정시간 합계(목록과 항상 일치). 상위 과목명은 캡처 기준
+const ARCHIVE_CATS = ['온라인','마이크로러닝','오프라인'];
+const ARCHIVE_PASS_SEC = 20 * 3600;   // 이수 기준: 총 누적시간 20시간 이상(가안 — 기획 확인 필요)   // 과정유형 확정값(과정 구분 기준) 준용
+const ARCHIVE_SUBJECTS = [
+  {code:'HLAC03048', name:'공감 스위치 ON! 관계를 바꾸는 말 습관', dur:13036, cat:'온라인'},
+  {code:'HLSC68278', name:'[SSS급 루키] 탑티어 기획자의 생각법', dur:13803, cat:'온라인'},
+  {code:'HLAC05051', name:'[북러닝] 나의 가치를 높이는 우아한 대화법(도서 미제공)', dur:9076, cat:'온라인'},
+  {code:'HLAC28575', name:'AI로 완성하는 프로젝트 관리 스킬1', dur:1603, cat:'마이크로러닝'},
+  {code:'HLSC71690', name:'[SSS급 인재] 실리콘밸리식 협업 스킬, 애자일 커뮤니케이션', dur:14197, cat:'온라인'},
+  {code:'HLMC00412', name:'3분 경제 브리핑', dur:180, cat:'마이크로러닝'},
+  {code:'HLMC00419', name:'보고서 한 장 요약법', dur:240, cat:'마이크로러닝'},
+  {code:'HLOF10021', name:'신입사원 비즈니스 매너', dur:null, cat:'오프라인'}
+];
+// 과정 학습시간(과정에 정의된 학습시간, 가상) — 온라인·마이크로러닝: 실 재생시간 올림 시간, 오프라인: 8시간
+ARCHIVE_SUBJECTS.forEach(x => x.studyH = x.dur===null ? 8 : Math.max(1, Math.ceil(x.dur/3600)));
+function archiveOf(e){
+  const n = 4 + (e.id*7) % 20;
+  const subs = e.id % 3 === 0 ? ARCHIVE_SUBJECTS.filter(x=>x.cat!=='오프라인') : ARCHIVE_SUBJECTS;   // 일부 임직원은 오프라인 이력 없음
+  const list = Array.from({length:n}, (_,k) => {
+    const sj = subs[(e.id + k*3) % subs.length];
+    const d = new Date(2026, 9, 14); d.setDate(d.getDate() - k*4 - (e.id % 5));
+    let sec;
+    if(sj.cat==='오프라인') sec = 3600 * (2 + k % 4);                       // 오프라인: 인정 교육시간(가정)
+    else if(k % 7 === 0) sec = 0;                                               // 인정시간 0초 케이스(캡처 1행)
+    else sec = Math.min(sj.dur, Math.floor(sj.dur * (0.25 + ((e.id*13 + k*17) % 75) / 100)));
+    // 수료처리일 — 수료처리전이면 '-'. 수료 시 학습일 당일~3일 이내(가상, 오늘 이후 불가)
+    const done = sec > 0 && (k % 3 !== 1);
+    const dd = new Date(d); dd.setDate(dd.getDate() + (sj.cat==='오프라인' ? 0 : k % 4));
+    const doneDate = !done ? '-' : (dd > new Date(2026, 9, 19) ? fmt(d) : fmt(dd));
+    return { code:sj.code, title:sj.name, cat:sj.cat, dur:sj.dur, studyH: sj.studyH, sec, date: fmt(d), doneDate };
+  });
+  const by = Object.fromEntries(ARCHIVE_CATS.map(c => [c, list.filter(x=>x.cat===c).reduce((a,x)=>a+x.sec,0)]));
+  return { list: list.map((x,i)=>({...x, no: list.length - i})), by, total: Object.values(by).reduce((a,v)=>a+v,0) };
+}
+// 시간 표기 — 'H시간 M분 S초(N초)', 60초 미만은 'N초'
+function hms(sec){
+  const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), x = sec % 60;
+  const t = [h?`${h}시간`:'', (h||m)?`${m}분`:'', `${x}초`].filter(Boolean).join(' ');
+  return sec >= 60 ? `${t}(${sec}초)` : t;
+}
+function hm(min){ if(!min) return '0분'; const h = Math.floor(min/60), m = min % 60; return (h ? `${h}시간 ` : '') + (m ? `${m}분` : '').trim() || `${h}시간`; }
+function empCourseMovePage(n){ edetail.page = n; renderEmpDetail(); }
+
+// 수강 이력 생성 — 상단 7건 과정명은 캡처 기준, 그 외 가상. 학습상태는 오늘(2026.10.15) 기준 학습 기간으로 판정
+const TODAY = '2026.10.15';
+const COURSE_POOL = [
+  ['79405','온라인','온라인 과제'],
+  ['57516','마이크로러닝','[#Sales Skill-Set 1 : 나의 세일즈를 매력있게 만드는 언어 포장 기술]언어에 생크림을 올리는 아이싱(Icing) 기법'],
+  ['57513','마이크로러닝','[#Pre-Sales : 고객 짝사랑을 멈추게 하는 세일즈 역지사지]세일즈 언어는 살아있다'],
+  ['79356','온라인','(복사)(복사)시험, 과제, 토론'],
+  ['79355','온라인','(복사)시험, 과제, 토론'],
+  ['79351','온라인','(복사)토론만 있어요'],
+  ['79348','온라인','토론만 있어요'],
+  ['79320','온라인','리더의 질문법'],['79311','온라인','데이터 리터러시 기초'],['57490','마이크로러닝','보고서 첫 문장 쓰는 법'],
+  ['79302','온라인','엑셀 실무 함수 30선'],['79288','오프라인','신입사원 비즈니스 매너'],['79275','온라인','팀장의 피드백 대화'],
+  ['57466','마이크로러닝','생성형 AI 업무 활용'],['79260','하이브리드','협상의 기술'],['79251','온라인','회계 기초와 재무제표 읽기']
+];
+const pad2 = n => String(n).padStart(2,'0');
+function fmt(d){ return `${d.getFullYear()}.${pad2(d.getMonth()+1)}.${pad2(d.getDate())}`; }
+function enrollmentsOf(e){
+  const n = 6 + (e.id * 7) % 33;
+  const list = [];
+  for(let k=0;k<n;k++){
+    const [code,type,name] = COURSE_POOL[k % COURSE_POOL.length];
+    const start = new Date(2026, 8, 14); start.setDate(start.getDate() - k*9);          // 최신 신청이 위
+    const end = new Date(start); end.setFullYear(end.getFullYear() + (type==='마이크로러닝' ? 3 : 1));
+    if(k % 4 === 3) end.setFullYear(start.getFullYear(), start.getMonth()+2, start.getDate()); // 일부 단기 과정 → 학습 종료
+    const s = fmt(start), en = fmt(end);
+    const state = s > TODAY ? '학습 예정' : (en < TODAY ? '학습 종료' : '학습중');
+    const result = state==='학습 예정' ? '-'
+      : state==='학습중' ? ((k % 3 === 1) ? '수료' : '수료처리전')
+      : ((k % 2 === 0) ? '수료' : '미수료');
+    const fee = (k % 5 === 4) ? 30000 + (k%3)*15000 : 0;
+    list.push({ code, type, name, start:s, end:en, applied:`${s} ${pad2(9 + k%9)}:${pad2((k*13)%60)}`, state, result, fee });
+  }
+  return list.map((c,i)=>({...c, no: list.length - i}));
+}
+function goSite(code){ toast(`연수원(${code}) 관리자 화면으로 이동 — 새 창`); }
+
+function renderEmpDetail(){
+  const e = EMPLOYEES[edetail.id-1];
+  const r1 = (k,v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
+  const infoTab = `
+    <div class="sub-head">
+      <h3 class="sub-title">기본정보</h3>
+      <button class="btn btn-line" onclick="goSite('${e.siteCode}')">연수원 가기</button>
+    </div>
+    <table class="kv-table kv-2col">
+      <tr><th>이름</th><td>${e.name}</td><th>연수원 코드 / 연수원명</th><td>${e.siteCode} / ${escapeHtml(e.siteName)}</td></tr>
+      <tr><th>아이디</th><td>${e.loginId}</td><th>기업 코드 / 기업명</th><td>${e.corpCode} / ${escapeHtml(e.corpName)}</td></tr>
+      <tr><th>사번</th><td>${e.empNo}</td><th>Tenant ID</th><td>${e.tenantId}</td></tr>
+    </table>
+    <h3 class="sub-title">상세정보</h3>
+    <table class="kv-table">
+      ${r1('부서', e.dept)}${r1('직급', e.rank)}${r1('휴대번호', e.mobile)}${r1('일반전화번호', e.tel)}
+      ${r1('주소', escapeHtml(e.addr))}${r1('근무상태', `<span class="chip ${e.status==='재직'?'':'off'}">${e.status}</span>`)}
+    </table>
+    <table class="kv-table kv-2col">
+      <tr><th>등록일</th><td>${e.regAt}</td><th>수정일</th><td>${e.updAt}</td></tr>
+    </table>`;
+  // 수강 정보 탭 — 요약 수치는 아래 목록 데이터에서 집계(목록과 항상 일치)
+  const cs = enrollmentsOf(e);
+  const sum = {
+    total: cs.length,
+    plan: cs.filter(c=>c.state==='학습 예정').length,
+    ing:  cs.filter(c=>c.state==='학습중').length,
+    end:  cs.filter(c=>c.state==='학습 종료').length,
+    pre:  cs.filter(c=>c.result==='수료처리전').length,
+    pass: cs.filter(c=>c.result==='수료').length,
+    fail: cs.filter(c=>c.result==='미수료').length,
+    fee:  cs.reduce((a,c)=>a+c.fee,0)
+  };
+  const ePages = Math.max(1, Math.ceil(cs.length/edetail.size));
+  const eSlice = cs.slice((edetail.page-1)*edetail.size, edetail.page*edetail.size);
+  const courseTab = `
+    <h3 class="sub-title">기본정보</h3>
+    <table class="kv-table kv-2col">
+      <tr><th>이름</th><td>${e.name}</td><th>연수원 코드 / 연수원명</th><td>${e.siteCode} / ${escapeHtml(e.siteName)}</td></tr>
+      <tr><th>아이디</th><td>${e.loginId}</td><th>기업 코드 / 기업명</th><td>${e.corpCode} / ${escapeHtml(e.corpName)}</td></tr>
+    </table>
+    <h3 class="sub-title">수강 정보</h3>
+    <div class="table-wrap">
+      <table class="summary-table">
+        <thead><tr><th>전체 과정수</th><th>학습 예정</th><th>학습중</th><th>학습 종료</th><th>수료처리전</th><th>수료</th><th>미수료</th><th>교육비 합계</th></tr></thead>
+        <tbody><tr><td>${sum.total}</td><td>${sum.plan}</td><td>${sum.ing}</td><td>${sum.end}</td><td>${sum.pre}</td><td>${sum.pass}</td><td>${sum.fail}</td><td>${sum.fee.toLocaleString()}원</td></tr></tbody>
+      </table>
+    </div>
+    <div class="table-head" style="margin-top:28px">
+      <div class="count">검색결과 ${cs.length.toLocaleString()}건</div>
+      <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+    </div>
+    <div class="table-wrap">
+      <table class="course-table">
+        <thead><tr>
+          <th style="width:60px">No.</th><th style="width:90px">과정코드</th><th style="width:100px">과정유형</th><th class="l">과정명</th>
+          <th style="width:190px">학습 기간</th><th style="width:140px">신청일</th><th style="width:90px">학습상태</th><th style="width:90px">수료여부</th><th class="r" style="width:100px">교육비</th>
+        </tr></thead>
+        <tbody>
+          ${cs.length ? eSlice.map(c=>`<tr>
+            <td>${c.no}</td><td>${c.code}</td><td>${c.type}</td><td class="l">${escapeHtml(c.name)}</td>
+            <td>${c.start} ~ ${c.end}</td><td>${c.applied}</td><td>${c.state}</td><td>${c.result}</td><td class="r">${c.fee.toLocaleString()}원</td></tr>`).join('')
+          : `<tr class="empty"><td colspan="9">수강 이력이 없습니다.</td></tr>`}
+        </tbody>
+      </table>
+    </div>
+    ${cs.length ? `<div class="pagination">${pagerHtml(edetail.page, ePages, 'empCourseMovePage')}</div>` : ''}`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>임직원 정보</h1>
+      <div class="breadcrumb">홈 <span>›</span> 임직원 관리 <span>›</span> 임직원 조회 <span>›</span> <b>임직원 정보</b></div>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab ${edetail.tab==='info'?'on':''}" onclick="setEmpTab('info')">임직원 정보</button>
+        <button class="tab ${edetail.tab==='course'?'on':''}" onclick="setEmpTab('course')">수강 정보</button>
+      </div>
+      ${edetail.tab==='info' ? infoTab : courseTab}
+      <div class="back-foot">
+        <button class="btn btn-line" onclick="go('emp-list','emp')"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button>
+      </div>
+    </div>`;
+}
+
+/* =========================================================
+   학습 관리 > 과정별 학습현황 (캡처 기준)
+   - 1행 = 연수원 × 과정(가격정책별) 단위
+   - 학습자 수 = 예정 + 학습중 + 종료 = 수료처리전 + 수료 + 미수료
+   ========================================================= */
+const LC_NAMES = ['3-3-3 영어 Lv1 - 이 단어만은 알자! (2)','3-3-3 영어 Lv1 - 이 단어만은 알자! (1)[교재포함]','리더의 질문법','데이터 리터러시 기초','엑셀 실무 함수 30선','신입사원 비즈니스 매너','팀장의 피드백 대화','생성형 AI 업무 활용','협상의 기술','회계 기초와 재무제표 읽기','비즈니스 중국어 첫걸음','정보보안 법정의무교육'];
+const LC_CATE = ['외국어','외국어','직무공통','전문직무','직무공통','자기개발','직무공통','전문직무','자기개발','전문직무','외국어','직무공통'];
+const LC_TYPES = ['온라인','온라인','온라인','온라인','마이크로러닝','오프라인','온라인','마이크로러닝','하이브리드','온라인','온라인','온라인'];
+const LC_TOTAL = 3099;
+function buildLearnCourses(){
+  const sites = DATA.filter(d => d.cateMap==='Y').map(d=>d.siteName).concat(['Flex Premium 기준 연수원','Flex Premium 기준 연수원']);
+  const rows = [];
+  for(let i=0;i<LC_TOTAL;i++){
+    const n = i % LC_NAMES.length;
+    const learners = 1 + (i*7) % 5;
+    const start = new Date(2026, (i*3)%10, 1 + (i*11)%27);
+    const end = new Date(start); end.setDate(end.getDate() + [1,30,60,90][i%4]);
+    const s = fmt(start), e = fmt(end);
+    // 학습상태 분배 (과정 학습기간 기준)
+    let plan=0, ing=0, done=0;
+    if(s > TODAY) plan = learners; else if(e < TODAY) done = learners; else { done = i%3===0 ? 1 : 0; ing = learners - done; }
+    // 수료상태 분배 — 종료 학습자는 수료/미수료, 그 외는 수료처리전
+    const pass = Math.min(done, (i % 4 === 1) ? done : Math.floor(done/2));
+    const fail = done - pass, pre = learners - pass - fail;
+    rows.push({
+      site: sites[i % sites.length], op: i % 6 === 0 ? '-' : (i % 10 === 3 ? '러닝메이커' : '일반'),
+      recruit: i % 5 === 2 ? '수시' : '정시',
+      type: LC_TYPES[n], name: LC_NAMES[n], cate: LC_CATE[n], courseId: 1 + (i % 40),
+      start: s, end: e, learners, plan, ing, done, pre, pass, fail
+    });
+  }
+  return rows.reverse().map((r,i)=>({...r, no: LC_TOTAL - i}));
+}
+const LEARN_COURSES = buildLearnCourses();
+
+const lcInit = () => ({ site:'', recruit:'', dateType:'start', from:'', to:'', kType:'name', keyword:'', op:'', type:'', cate:'' });
+const lc = { form: lcInit(), applied: lcInit(), page:1, size:20 };
+
+function lcFiltered(){
+  const f = lc.applied, q = f.keyword.trim().toLowerCase();
+  return LEARN_COURSES.filter(r => {
+    if(f.site && r.site !== f.site) return false;
+    if(f.recruit && r.recruit !== f.recruit) return false;
+    const d = (f.dateType==='start' ? r.start : r.end);
+    if(f.from && d < f.from.replace(/-/g,'.')) return false;
+    if(f.to && d > f.to.replace(/-/g,'.')) return false;
+    if(q && !(f.kType==='name' ? r.name.toLowerCase().includes(q) : String(r.courseId)===q)) return false;
+    if(f.op && r.op !== f.op) return false;
+    if(f.type && r.type !== f.type) return false;
+    if(f.cate && r.cate !== f.cate) return false;
+    return true;
+  });
+}
+const opt = (list, cur, allLabel) => `<option value="">${allLabel}</option>` + list.map(v=>`<option value="${v}" ${cur===v?'selected':''}>${v}</option>`).join('');
+
+function renderLearnCourse(){
+  const f = lc.form;
+  const siteNames = [...new Set(LEARN_COURSES.map(r=>r.site))];
+  const sub = !f.op;   // 운영구분 미선택 시 과정유형·과정분류 비활성 (캡처 기준 가정)
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>과정별 학습현황</h1>
+      <div class="breadcrumb">홈 <span>›</span> 학습 관리 <span>›</span> <b>과정별 학습현황</b></div>
+    </div>
+    <div class="card">
+      <div class="filter-box">
+        <div class="filter-row">
+          <div class="field"><label>연수원명</label><div class="inputs"><select class="select wide" id="lcSite">${opt(siteNames, f.site, '전체 연수원')}</select></div></div>
+          <div class="field"><label>모집구분</label><div class="inputs"><select class="select mid" id="lcRecruit">${opt(['정시','수시'], f.recruit, '전체')}</select></div></div>
+          <div class="field"><label>과정 학습기간</label><div class="inputs">
+            <select class="select mid" id="lcDateType"><option value="start" ${f.dateType==='start'?'selected':''}>학습시작일</option><option value="end" ${f.dateType==='end'?'selected':''}>학습종료일</option></select>
+            <div class="date-range"><input type="date" id="lcFrom" value="${f.from}"> ~ <input type="date" id="lcTo" value="${f.to}"></div>
+          </div></div>
+        </div>
+        <div class="filter-row">
+          <div class="field"><label>과정검색</label><div class="inputs">
+            <select class="select mid" id="lcKType"><option value="name" ${f.kType==='name'?'selected':''}>과정명</option><option value="id" ${f.kType==='id'?'selected':''}>과정아이디</option></select>
+            <div class="search-input sm"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="lcKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.keyword)}"></div>
+            <select class="select mid" id="lcOp">${opt(['일반','러닝메이커'], f.op, '운영구분 전체')}</select>
+            <select class="select mid" id="lcType" ${sub?'disabled':''}>${opt(['온라인','마이크로러닝','오프라인','하이브리드'], f.type, '과정유형 전체')}</select>
+            <select class="select mid" id="lcCate" ${sub?'disabled':''}>${opt(['외국어','자격·공인과정','자기개발','전문직무','직무공통'], f.cate, '과정분류 전체')}</select>
+          </div></div>
+          <div class="btns">
+            <button class="btn btn-primary" onclick="lcSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+            <button class="btn btn-line" onclick="lcReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-wrap" style="margin-bottom:28px">
+        <table class="summary-table">
+          <thead><tr><th>전체 과정수</th><th>전체 학습자 수</th><th>예정</th><th>학습중</th><th>종료</th><th>수료처리전</th><th>수료</th><th>미수료</th></tr></thead>
+          <tbody id="lcSum"></tbody>
+        </table>
+      </div>
+      <div class="table-head">
+        <div class="count" id="lcCount"></div>
+        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+      </div>
+      <div class="table-wrap">
+        <table class="lc-table">
+          <thead><tr>
+            <th style="width:64px">No.</th><th class="l" style="width:170px">연수원명</th><th style="width:80px">운영구분</th><th style="width:90px">과정유형</th>
+            <th class="l">과정명</th><th style="width:80px">과정분류</th><th style="width:80px">과정아이디</th><th style="width:170px">과정 학습기간</th>
+            <th class="num">학습자 수</th><th class="num">예정</th><th class="num">학습중</th><th class="num">종료</th><th class="num" style="width:76px">수료처리전</th><th class="num">수료</th><th class="num">미수료</th>
+          </tr></thead>
+          <tbody id="lcBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="lcPager"></div>
+    </div>`;
+  const bind = (id, key, ev='onchange') => document.getElementById(id)[ev] = e => { lc.form[key] = e.target.value; };
+  bind('lcSite','site'); bind('lcRecruit','recruit'); bind('lcDateType','dateType'); bind('lcFrom','from'); bind('lcTo','to');
+  bind('lcKType','kType'); bind('lcKeyword','keyword','oninput'); bind('lcType','type'); bind('lcCate','cate');
+  document.getElementById('lcOp').onchange = e => { lc.form.op = e.target.value; if(!lc.form.op){ lc.form.type=''; lc.form.cate=''; } renderLearnCourse(); };
+  document.getElementById('lcKeyword').onkeydown = e => { if(e.key==='Enter') lcSearch(); };
+  renderLcTable();
+}
+function renderLcTable(){
+  const rows = lcFiltered(), total = rows.length;
+  const add = k => rows.reduce((a,r)=>a+r[k],0);
+  document.getElementById('lcSum').innerHTML = `<tr><td>${total.toLocaleString()}</td><td>${add('learners').toLocaleString()}</td><td>${add('plan').toLocaleString()}</td><td>${add('ing').toLocaleString()}</td><td>${add('done').toLocaleString()}</td><td>${add('pre').toLocaleString()}</td><td>${add('pass').toLocaleString()}</td><td>${add('fail').toLocaleString()}</td></tr>`;
+  const pages = Math.max(1, Math.ceil(total/lc.size));
+  if(lc.page > pages) lc.page = pages;
+  const slice = rows.slice((lc.page-1)*lc.size, lc.page*lc.size);
+  document.getElementById('lcCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('lcBody').innerHTML = total ? slice.map(r => `<tr>
+      <td>${r.no}</td><td class="l">${escapeHtml(r.site)}</td><td>${r.op}</td><td>${r.type}</td>
+      <td class="l">${r.op==='-' ? escapeHtml(r.name) : `<button class="link" onclick="openLcDetail(${r.no})">${escapeHtml(r.name)}</button>`}</td>
+      <td>${r.cate}</td><td>${r.courseId}</td><td>${r.start} ~ ${r.end}</td>
+      <td class="num">${r.learners}</td><td class="num">${r.plan}</td><td class="num">${r.ing}</td><td class="num">${r.done}</td>
+      <td class="num">${r.pre}</td><td class="num">${r.pass}</td><td class="num">${r.fail}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="15">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('lcPager').innerHTML = pagerHtml(lc.page, pages, 'lcMovePage');
+}
+function lcSearch(){
+  const f = lc.form;
+  if(f.from && f.to && f.from > f.to){ toast('종료일은 시작일 이후로 선택해주세요.'); return; }
+  lc.applied = {...f}; lc.page = 1; renderLcTable();
+}
+function lcReset(){ lc.form = lcInit(); lc.applied = lcInit(); lc.page = 1; renderLearnCourse(); }
+function lcMovePage(n){ lc.page = n; renderLcTable(); }
+
+// 과정명 클릭 → 과정 학습현황 상세 (캡처 기준)
+const lcdInit = () => ({ content:'', kType:'name', keyword:'', site:'', dept:'' });
+const lcd = { no:null, form: lcdInit(), applied: lcdInit(), page:1, size:50 };
+function openLcDetail(no){ lcd.no = no; lcd.form = lcdInit(); lcd.applied = lcdInit(); lcd.page = 1; currentPage='learn-course-detail'; openGroup='learn'; renderLnb(); renderPage(); }
+
+// 개인정보 마스킹 — 이름: 첫·끝 글자 외 *, 아이디: 첫 글자 외 * (@ 앞)
+function maskName(n){ if(n==='-') return n; return n.length<=2 ? n[0]+'*' : n[0] + '*'.repeat(n.length-2) + n[n.length-1]; }
+function maskId(id){ if(id==='-') return id; const [a,d] = id.split('@'); return a[0] + '*'.repeat(Math.max(a.length-1,5)) + '@' + d; }
+
+// 학습자 생성 — 과정 행의 집계값(예정/학습중/종료, 수료처리전/수료/미수료)과 일치하도록 배분
+function learnersOf(r){
+  const list = [];
+  const evalTotal = r.no % 3 === 0 ? 0 : 1;
+  const states = [...Array(r.done).fill('종료'), ...Array(r.ing).fill('학습중'), ...Array(r.plan).fill('예정')];
+  let passLeft = r.pass;
+  states.forEach((st, k) => {
+    const withdrawn = (k === 0 && r.no % 4 === 0);   // 탈퇴 등 개인정보 미노출 케이스(캡처 4번 행)
+    const nm = EMP_LAST[(r.no+k) % EMP_LAST.length] + EMP_FIRST[(r.no*3+k) % EMP_FIRST.length];
+    let result = '수료처리전', doneAt = '-';
+    if(st==='종료'){ result = passLeft-- > 0 ? '수료' : '미수료'; doneAt = r.end.replace(/(\d+)\.(\d+)\.(\d+)/, (m,y,mo,d)=>`${y}.${mo}.${String(Math.min(28,Number(d)+1)).padStart(2,'0')}`) + ' 01:00'; }
+    const evalDone = result==='수료' ? evalTotal : (st==='예정' ? 0 : (k%2 ? Math.min(1,evalTotal) : 0));
+    list.push({
+      site: r.site, dept: withdrawn ? '-' : ['CMS솔루션팀','인사팀','교육팀','영업1팀'][(r.no+k)%4],
+      name: withdrawn ? '-' : nm, loginId: withdrawn ? '-' : `user${String((r.no*7+k)%900+100)}@example.com`,
+      period: st==='종료' ? `${r.start} ~ ${r.end}` : `${r.start} ~ 2026.12.31`,
+      state: st, evalDone, evalTotal,
+      score: st==='예정' ? '-' : (result==='수료' ? (80 + (k*7)%20) : (evalDone ? (3 + k%5 + 0.3).toFixed(1) : (st==='종료' ? 0 : '-'))),
+      result, doneAt
+    });
+  });
+  return list.reverse().map((x,i,arr)=>({...x, no: arr.length - i}));
+}
+function contentsOf(r){ return ['1차시. 오리엔테이션','2차시. 핵심 개념 이해','3차시. 실전 적용','최종평가','설문'].map((t,i)=>({id:i+1, title:t})); }
+
+function lcdFiltered(rows){
+  const f = lcd.applied, q = f.keyword.trim().toLowerCase(), dq = f.dept.trim().toLowerCase();
+  return rows.filter(x => {
+    if(q && !String(f.kType==='name' ? x.name : x.loginId).toLowerCase().includes(q)) return false;
+    if(f.site && x.site !== f.site) return false;
+    if(dq && !x.dept.toLowerCase().includes(dq)) return false;
+    return true;   // 목차검색: 필터 동작 미정 — 기획 확인 필요
+  });
+}
+
+function renderLearnCourseDetail(){
+  const r = LEARN_COURSES.find(x=>x.no===lcd.no);
+  const all = learnersOf(r);
+  const rows = lcdFiltered(all), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/lcd.size));
+  if(lcd.page > pages) lcd.page = pages;
+  const slice = rows.slice((lcd.page-1)*lcd.size, lcd.page*lcd.size);
+  const decided = r.pass + r.fail;   // 수료율 분모 = 수료확정자(수료 + 미수료)
+  const rate = decided ? Math.round(r.pass/decided*100) + '%' : '-';
+  const f = lcd.form;
+  const sites = [...new Set(all.map(x=>x.site))];
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>과정 학습현황 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 학습 관리 <span>›</span> 과정별 학습현황 <span>›</span> <b>과정 학습현황 상세</b></div>
+    </div>
+    <div class="card">
+      <div class="sub-head">
+        <h3 class="sub-title">과정 학습현황 상세</h3>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="go('learn-course','learn')">목록</button>
+          <button class="btn btn-line" onclick="go('learn-course','learn')">이전</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="lcd-sum">
+          <thead><tr>
+            <th class="l">연수원명</th><th>운영구분</th><th>과정유형</th><th class="l">과정명</th><th>과정분류</th><th>과정 학습기간</th>
+            <th>학습자 수</th><th>예정</th><th>학습중</th><th>종료</th><th>수료처리전</th><th>수료</th><th>미수료</th><th>수료율</th><th>수료기준</th>
+          </tr></thead>
+          <tbody><tr>
+            <td class="l">${escapeHtml(r.site)}</td><td>${r.op}</td><td>${r.type}</td>
+            <td class="l"><button class="link" onclick="toast('과정(상품) 상세로 이동 — 화면 정의 예정')">${escapeHtml(r.name)}</button></td>
+            <td>${r.cate}</td><td>${r.start} ~ ${r.end}</td>
+            <td>${r.learners}</td><td>${r.plan}</td><td>${r.ing}</td><td>${r.done}</td><td>${r.pre}</td><td>${r.pass}</td><td>${r.fail}</td><td>${rate}</td>
+            <td><button class="btn btn-line btn-sm" onclick="toast('수료기준 상세 — 화면 정의 예정')">상세보기</button></td>
+          </tr></tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">학습자 목록</h3>
+      <div class="filter-box">
+        <div class="filter-row">
+          <div class="field"><label>목차검색</label><div class="inputs">
+            <select class="select" style="width:288px" id="lcdContent"><option value="">포함된 콘텐츠를 선택하세요.</option>${contentsOf(r).map(c=>`<option value="${c.id}" ${String(f.content)===String(c.id)?'selected':''}>${c.title}</option>`).join('')}</select>
+          </div></div>
+        </div>
+        <div class="filter-row">
+          <div class="field"><label>학습자검색</label><div class="inputs">
+            <select class="select" style="width:84px" id="lcdKType"><option value="name" ${f.kType==='name'?'selected':''}>이름</option><option value="id" ${f.kType==='id'?'selected':''}>아이디</option></select>
+            <div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="lcdKeyword" style="width:180px" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.keyword)}"></div>
+          </div></div>
+          <div class="field"><label>연수원 검색</label><div class="inputs">
+            <select class="select" style="width:180px" id="lcdSite"><option value="">연수원 선택</option>${sites.map(v=>`<option ${f.site===v?'selected':''}>${escapeHtml(v)}</option>`).join('')}</select>
+          </div></div>
+          <div class="field"><label>부서검색</label><div class="inputs">
+            <div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="lcdDept" style="width:180px" type="text" placeholder="부서명을 입력해주세요." value="${escapeHtml(f.dept)}"></div>
+          </div></div>
+          <div class="btns">
+            <button class="btn btn-primary" onclick="lcdSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+            <button class="btn btn-line" onclick="lcdReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-head">
+        <div class="count">검색결과 ${total.toLocaleString()}건</div>
+        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width:1200px">
+          <thead><tr><th style="width:60px">No.</th><th>연수원명</th><th>부서명</th><th>이름</th><th>아이디</th><th>학습자 학습기간</th><th>학습상태</th><th>필수평가항목 이수</th><th>총점</th><th>수료여부</th><th>수료처리일</th></tr></thead>
+          <tbody>
+            ${total ? slice.map(x=>`<tr>
+              <td>${x.no}</td><td>${escapeHtml(x.site)}</td><td>${x.dept}</td><td>${maskName(x.name)}</td><td>${maskId(x.loginId)}</td>
+              <td>${x.period}</td><td>${x.state}</td><td>${x.evalDone} / ${x.evalTotal}</td><td>${x.score}</td><td>${x.result}</td><td>${x.doneAt}</td></tr>`).join('')
+            : `<tr class="empty"><td colspan="11">검색 결과가 없습니다.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <div class="list-foot">
+        <span class="total">총 ${total.toLocaleString()}건</span>
+        <div class="list-foot-r">
+          <select class="select" style="width:72px" onchange="lcd.size=Number(this.value);lcd.page=1;renderLearnCourseDetail()">
+            ${[20,50,100].map(n=>`<option value="${n}" ${lcd.size===n?'selected':''}>${n}</option>`).join('')}
+          </select><span class="per">씩 보기</span>
+          <div class="pagination" style="margin:0">${pagerHtml(lcd.page, pages, 'lcdMovePage')}</div>
+        </div>
+      </div>
+    </div>`;
+  const bind = (id, key, ev='onchange') => document.getElementById(id)[ev] = e => { lcd.form[key] = e.target.value; };
+  bind('lcdContent','content'); bind('lcdKType','kType'); bind('lcdKeyword','keyword','oninput'); bind('lcdSite','site'); bind('lcdDept','dept','oninput');
+  ['lcdKeyword','lcdDept'].forEach(id => document.getElementById(id).onkeydown = e => { if(e.key==='Enter') lcdSearch(); });
+}
+function lcdSearch(){ lcd.applied = {...lcd.form}; lcd.page = 1; renderLearnCourseDetail(); }
+function lcdReset(){ lcd.form = lcdInit(); lcd.applied = lcdInit(); lcd.page = 1; renderLearnCourseDetail(); }
+function lcdMovePage(n){ lcd.page = n; renderLearnCourseDetail(); }
+
+/* =========================================================
+   거래처 관리 > 거래처 목록 (탭: 고객사 / CP사 / 파트너사)
+   - 고객사 탭은 캡처 기준, CP사·파트너사 탭은 동일 구성 가안
+   ========================================================= */
+const CLIENT_TABS = [
+  {key:'customer', label:'고객사',   total:266},
+  {key:'cp',       label:'CP사',     total:48},
+  {key:'partner',  label:'파트너사', total:17}
+];
+const CL_NAME_POOL = {
+  customer:['한빛전자','대한물산','미래에너지','동방제약','서울정밀','청솔건설','누리통신','가온식품','하늘항공','바른금융','새솔화학','다온유통','라온소프트','온누리보험','한결모빌리티'],
+  cp:['파고다에스씨에스','가람디엠씨','멀티캠퍼스','패스트캠퍼스','클래스101','YBM','에듀윌','해커스'],
+  partner:['에이스HRD','비전컨설팅','러닝파트너스','스마트에듀랩']
+};
+const SALES_REPS = ['-','-','김영업','박영업','이영업'];
+const OPS = ['-','-','최운영','정운영'];
+function buildClients(){
+  const out = {};
+  CLIENT_TABS.forEach(t => {
+    const pool = CL_NAME_POOL[t.key];
+    out[t.key] = Array.from({length:t.total}, (_,i) => {
+      const nm = pool[i % pool.length] + (i >= pool.length ? ` ${Math.floor(i/pool.length)+1}` : '');
+      const d = new Date(2026, 9, 7); d.setDate(d.getDate() - Math.floor(i/6));
+      return {
+        no:i+1, corp30: 594 - i, corpCode: String(68000 + (i*137)%1000 + (t.key==='customer'?900:t.key==='cp'?100:500)),
+        type: t.label, classCode: i % 7 === 3 ? 'GRP-' + String(10 + i%20) : '-', group: i % 7 === 3 ? 'Y' : 'N',
+        name: nm, bizName: nm + (i%3===0 ? '(주)' : ''), bizNo: String(2018200000 + (i*977)%99999).padStart(10,'0'),
+        sales: SALES_REPS[i % SALES_REPS.length], op: OPS[i % OPS.length],
+        regAt: `${fmt(d).replace(/\./g,'-')} 12:40`
+      };
+    });
+  });
+  return out;
+}
+const CLIENTS = buildClients();
+const cls = { tab:'customer', keyword:'', applied:'', page:1, size:20 };
+function clFiltered(){
+  const q = cls.applied.trim().toLowerCase();
+  const rows = CLIENTS[cls.tab];
+  return q ? rows.filter(r => [r.corp30, r.corpCode, r.name, r.bizName].some(v => String(v).toLowerCase().includes(q))) : rows;
+}
+function setClientTab(k){ cls.tab = k; cls.keyword=''; cls.applied=''; cls.page = 1; renderClientList(); }
+
+function renderClientList(){
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>거래처 목록</h1>
+      <div class="breadcrumb">홈 <span>›</span> 거래처 관리 <span>›</span> <b>거래처 목록</b></div>
+    </div>
+    <div class="card">
+      <div class="tabs tabs-wide">
+        ${CLIENT_TABS.map(t=>`<button class="tab ${cls.tab===t.key?'on':''}" onclick="setClientTab('${t.key}')">${t.label}</button>`).join('')}
+      </div>
+      <div class="search-box">
+        <div class="field">
+          <label>검색어</label>
+          <div class="inputs">
+            <div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input id="clKeyword" style="width:430px" type="text" placeholder="3.0기업코드, 기업코드, 거래처명을 검색하세요" value="${escapeHtml(cls.keyword)}"></div>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="clSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+          <button class="btn btn-line" onclick="clReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+        </div>
+      </div>
+      <div class="table-head">
+        <div class="count" id="clCount"></div>
+        <div class="btns">
+          <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+          <button class="btn btn-primary" onclick="toast('거래처 등록 — 화면 정의 예정')">거래처 등록</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width:1300px">
+          <thead><tr><th style="width:60px">No</th><th>3.0기업코드</th><th>기업코드</th><th>거래처 유형</th><th>거래처분류코드</th><th>그룹사여부</th>
+            <th class="l" style="text-align:left">기업명</th><th class="l" style="text-align:left">사업자등록명</th><th>사업자등록번호</th><th>영업대표</th><th>운영담당자</th><th>등록일</th></tr></thead>
+          <tbody id="clBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="clPager"></div>
+    </div>`;
+  const kw = document.getElementById('clKeyword');
+  kw.oninput = e => cls.keyword = e.target.value;
+  kw.onkeydown = e => { if(e.key==='Enter') clSearch(); };
+  renderClTable();
+}
+function renderClTable(){
+  const rows = clFiltered(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/cls.size));
+  if(cls.page > pages) cls.page = pages;
+  const slice = rows.slice((cls.page-1)*cls.size, cls.page*cls.size);
+  document.getElementById('clCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('clBody').innerHTML = total ? slice.map(r=>`<tr>
+      <td>${r.no}</td><td>${r.corp30}</td><td>${r.corpCode}</td><td>${r.type}</td><td>${r.classCode}</td><td>${r.group}</td>
+      <td style="text-align:left"><button class="link" onclick="openClientDetail('${cls.tab}',${r.no})">${escapeHtml(r.name)}</button></td>
+      <td style="text-align:left">${escapeHtml(r.bizName)}</td><td>${r.bizNo}</td><td>${r.sales}</td><td>${r.op}</td><td>${r.regAt}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="12">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('clPager').innerHTML = pagerHtml(cls.page, pages, 'clMovePage');
+}
+function clSearch(){ cls.applied = cls.keyword; cls.page = 1; renderClTable(); }
+function clReset(){ cls.keyword=''; cls.applied=''; cls.page=1; renderClientList(); }
+function clMovePage(n){ cls.page = n; renderClTable(); }
+
+// 기업명 클릭 → 거래처 상세 (학습 설정은 연수원 상세로 이동 — 기업:연수원 N:M 구조)
+let clDetail = null;
+let clDetailTab = 'info';
+function openClientDetail(tab, no){
+  clDetail = CLIENTS[tab][no-1];
+  // 상세 전용 필드 기본값 (가상 데이터)
+  const r = clDetail, i = r.no;
+  if(!r._init){
+    Object.assign(r, {
+      _init:true, clsGroup:'-', clsAffil:'-', clsPlace:'-',
+      bizNoFmt: r.bizNo.replace(/^(\d{3})(\d{2})(\d{5})$/,'$1-$2-$3'),
+      turnkey: '', invoice: ['1안','2안'][i%2],
+      industry: i%2 ? '제조업, 서비스업' : '-', item: i%2 ? '전자부품, 교육서비스' : '-', ceo: i%2 ? '김대표' : '',
+      mgr:'', mgrTel:'', mgrMail:'', settle:'', settleTel:'', settleMail:'',
+      hunetSales: r.sales==='-' ? '' : r.sales, hunetEdu: r.op==='-' ? '' : r.op
+    });
+  }
+  clDetailTab = 'info'; currentPage='client-detail'; openGroup='client'; renderLnb(); renderPage();
+}
+function setClientDetailTab(t){ clDetailTab = t; renderClientDetail(); }
+
+function renderClientDetail(){
+  const r = clDetail;
+  const yn = (name, cur) => `<div class="yn">${['Y','N'].map(v=>`<label><input type="radio" name="${name}" value="${v}" ${cur===v?'checked':''}>${v}</label>`).join('')}</div>`;
+  const inp = (id, v, ph, extra='') => `<input class="input" id="${id}" value="${escapeHtml(v||'')}" placeholder="${ph}" ${extra}>`;
+  const infoTab = `
+      <h3 class="sub-title">거래처 유형 정보</h3>
+      <table class="kv-table"><tr><th>거래처 유형</th><td>${r.type}</td></tr></table>
+
+      <h3 class="sub-title">거래처정보</h3>
+      <table class="kv-table form-table">
+        <tr><th>거래처 분류</th><td>
+          <button class="btn btn-line" onclick="toast('거래처 분류 검색 — 화면 정의 예정')">분류 검색</button>
+          <div class="cls-boxes">
+            <div><small>그룹사</small>${r.clsGroup}</div><div><small>계열사</small>${r.clsAffil}</div><div><small>사업장</small>${r.clsPlace}</div>
+          </div></td></tr>
+        <tr><th>3.0 기업코드</th><td>${r.corp30}</td></tr>
+        <tr><th>기업코드<i>*</i></th><td>${r.corpCode}</td></tr>
+        <tr><th>기업명<i>*</i></th><td>${escapeHtml(r.name)}</td></tr>
+        <tr><th>사업자번호</th><td>${inp('cdBizNo', r.bizNoFmt, '000-00-00000', 'maxlength="12"')}</td></tr>
+        <tr><th>그룹여부</th><td>${yn('cdGroup', r.group)}</td></tr>
+        <tr><th>턴키 기업 여부</th><td>${yn('cdTurnkey', r.turnkey)}</td></tr>
+        <tr><th>계산서 발행 유형</th><td><select class="select" style="width:288px" id="cdInvoice">${['1안','2안'].map(v=>`<option ${r.invoice===v?'selected':''}>${v}</option>`).join('')}</select></td></tr>
+        <tr><th>업태</th><td>${inp('cdIndustry', r.industry==='-'?'':r.industry, '업태를 입력하세요')}</td></tr>
+        <tr><th>종목</th><td>${inp('cdItem', r.item==='-'?'':r.item, '종목을 입력하세요')}</td></tr>
+        <tr><th>대표자</th><td>${inp('cdCeo', r.ceo, '대표자명을 입력하세요')}</td></tr>
+      </table>
+
+      <h3 class="sub-title">거래처 담당자정보</h3>
+      <table class="kv-table form-table">
+        <tr><th>기업 담당자</th><td>${inp('cdMgr', r.mgr, '담당자 이름')}</td></tr>
+        <tr><th>기업 담당자 연락처</th><td>${inp('cdMgrTel', r.mgrTel, '숫자를 입력하세요', 'inputmode="numeric"')}</td></tr>
+        <tr><th>기업 담당자 이메일</th><td>${inp('cdMgrMail', r.mgrMail, 'name@company.com')}</td></tr>
+        <tr><th>정산 담당자</th><td>${inp('cdSettle', r.settle, '담당자 이름')}</td></tr>
+        <tr><th>정산 담당자 연락처</th><td>${inp('cdSettleTel', r.settleTel, '숫자를 입력하세요', 'inputmode="numeric"')}</td></tr>
+        <tr><th>정산 담당자 이메일</th><td>${inp('cdSettleMail', r.settleMail, 'name@company.com')}</td></tr>
+      </table>
+
+      <h3 class="sub-title">휴넷 담당자정보</h3>
+      <table class="kv-table form-table">
+        <tr><th>휴넷영업담당자</th><td><div class="inline">${inp('cdHunetSales', r.hunetSales, '검색 결과를 선택하세요', 'readonly')}<button class="btn btn-line" onclick="pickHunetStaff('cdHunetSales')">검색</button></div></td></tr>
+        <tr><th>휴넷교육담당자</th><td><div class="inline">${inp('cdHunetEdu', r.hunetEdu, '검색 결과를 선택하세요', 'readonly')}<button class="btn btn-line" onclick="pickHunetStaff('cdHunetEdu')">검색</button></div></td></tr>
+      </table>`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>${r.type} 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 거래처 관리 <span>›</span> 거래처 목록 <span>›</span> <b>${r.type} 상세</b></div>
+    </div>
+    <div class="card">
+      ${infoTab}
+      <div class="back-foot split">
+        <button class="btn btn-line" onclick="go('client-list','client')"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button>
+        <button class="btn btn-primary" onclick="saveClientInfo()">저장</button>
+      </div>
+    </div>`;
+  ['cdMgrTel','cdSettleTel'].forEach(id => { const el = document.getElementById(id); if(el) el.oninput = () => el.value = el.value.replace(/\D/g,''); });
+  const biz = document.getElementById('cdBizNo');
+  if(biz) biz.oninput = () => { const d = biz.value.replace(/\D/g,'').slice(0,10); biz.value = d.replace(/^(\d{3})(\d{0,2})(\d{0,5}).*/, (m,a,b,c)=>[a,b,c].filter(Boolean).join('-')); };
+}
+
+// 휴넷 담당자 검색 — 화면 정의 전. 프로토타입은 샘플 담당자 순환 선택
+const HUNET_STAFF = ['김영업','박영업','이영업','최운영','정운영'];
+function pickHunetStaff(id){
+  const el = document.getElementById(id);
+  const next = HUNET_STAFF[(HUNET_STAFF.indexOf(el.value) + 1) % HUNET_STAFF.length];
+  el.value = next; toast(`${next} 선택 (담당자 검색 팝업 — 화면 정의 예정)`);
+}
+
+function saveClientInfo(){
+  const v = id => document.getElementById(id).value.trim();
+  const radio = n => (document.querySelector(`input[name="${n}"]:checked`)||{}).value || '';
+  const mailOk = m => !m || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(m);
+  if(v('cdBizNo') && !/^\d{3}-\d{2}-\d{5}$/.test(v('cdBizNo'))){ toast('사업자번호 10자리를 입력해주세요.'); return; }
+  if(!mailOk(v('cdMgrMail')) || !mailOk(v('cdSettleMail'))){ toast('이메일 형식을 확인해주세요.'); return; }
+  Object.assign(clDetail, {
+    bizNoFmt:v('cdBizNo'), bizNo:v('cdBizNo').replace(/-/g,''), group:radio('cdGroup'), turnkey:radio('cdTurnkey'),
+    invoice:v('cdInvoice'), industry:v('cdIndustry'), item:v('cdItem'), ceo:v('cdCeo'),
+    mgr:v('cdMgr'), mgrTel:v('cdMgrTel'), mgrMail:v('cdMgrMail'), settle:v('cdSettle'), settleTel:v('cdSettleTel'), settleMail:v('cdSettleMail'),
+    hunetSales:v('cdHunetSales'), hunetEdu:v('cdHunetEdu')
+  });
+  if(clDetail.hunetSales) clDetail.sales = clDetail.hunetSales;
+  if(clDetail.hunetEdu) clDetail.op = clDetail.hunetEdu;
+  toast('저장되었습니다.');
+}
+
+/* =========================================================
+   연수원 관리 > 연수원 관리목록 (캡처 기준)
+   ========================================================= */
+const SITE_KINDS = ['표준','FLEX(Basic)','FLEX(Standard)','FLEX(Premium)'];
+function buildSites(){
+  const base = DATA.map(d => ({ name:d.siteName, code:d.siteCode }));
+  const extra = ['한빛전자 연수원','대한물산 연수원','미래에너지 연수원','동방제약 연수원','서울정밀 연수원','청솔건설 연수원','누리통신 연수원','가온식품 연수원','하늘항공 연수원','바른금융 연수원','새솔화학 연수원','다온유통 연수원','라온소프트 연수원','온누리보험 연수원','한결모빌리티 연수원','LABS 데모 연수원','[DEV] 신규 연수원']
+    .map((n,i)=>({ name:n, code:String(1000150 - i*2) }));
+  return base.concat(extra).slice(0,46).map((x,i) => {
+    const start = new Date(2026, 9, 12); start.setDate(start.getDate() - i*9);
+    const end = new Date(start); end.setFullYear(end.getFullYear() + 1 + (i%5));
+    return {
+      no:i+1, name:x.name, code:x.code, kind: SITE_KINDS[i % 4 === 0 ? 0 : i % 4],
+      group: x.name.replace(/ ?연수원.*$/,'').replace(/^\[DEV\] /,'[DEV] ') + (i%3===0 ? ' 그룹' : ''), groupCode: 382 - i*3,
+      period: `${fmt(start).replace(/\./g,'-')} ~ ${fmt(end).replace(/\./g,'-')}`,
+      sales: ['김영업','-','박영업','-','이영업'][i%5], op: ['최운영','-','-','정운영'][i%4],
+      // 상세(관리) 전용 필드 — 가상 값
+      commonId: 'site' + x.code.slice(-3), join: i%3===0 ? 'Y' : 'N', cateType: i%2 ? '표준' : '기업자체',
+      encourage: {svcGuide:'N', popNow:'N', popMonth:'N', endSoon:'N', endNotice:'N', monthly:'N'},
+      corpCode30: 366 + i, corpCode: i%4===0 ? String(68900 + i) : '-', bizNo: i%4===0 ? String(2018200000 + i*977) : '-',
+      turnkey: i%5===0 ? 'Y' : '-', invoice: ['1안','2안'][i%2],
+      contacts: i%3===0 ? {mgr:'김담당', mgrTel:'02-123-4567', mgrMail:'manager@example.com', settle:'박정산', settleTel:'02-123-4568', settleMail:'settle@example.com', sales:'김영업', edu:'최운영'}
+                        : {mgr:'-', mgrTel:'-', mgrMail:'-', settle:'-', settleTel:'-', settleMail:'-', sales:'-', edu:'-'}
+    };
+  });
+}
+const SITES = buildSites();
+const SITE_SEARCH = [{value:'name',label:'연수원명'},{value:'code',label:'연수원코드'},{value:'group',label:'그룹사명'}];
+const sl = { type:'name', keyword:'', applied:{type:'name', keyword:''}, page:1, size:20 };
+function slFiltered(){
+  const {type, keyword} = sl.applied, q = keyword.trim().toLowerCase();
+  return q ? SITES.filter(r => String(r[type]).toLowerCase().includes(q)) : SITES;
+}
+function renderSiteList(){
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>연수원 관리목록</h1>
+      <div class="breadcrumb">홈 <span>›</span> 연수원 관리 <span>›</span> <b>연수원 관리목록</b></div>
+    </div>
+    <div class="card">
+      <div class="search-box">
+        <div class="field">
+          <label>연수원 검색</label>
+          <div class="inputs">
+            <select class="select" id="slType">${SITE_SEARCH.map(t=>`<option value="${t.value}" ${sl.type===t.value?'selected':''}>${t.label}</option>`).join('')}</select>
+            <div class="search-input"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="slKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(sl.keyword)}"></div>
+          </div>
+        </div>
+        <div class="btns">
+          <button class="btn btn-primary" onclick="slSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+          <button class="btn btn-line" onclick="slReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+        </div>
+      </div>
+      <div class="table-head">
+        <div class="count" id="slCount"></div>
+        <div class="btns">
+          <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+          <button class="btn btn-primary" onclick="toast('연수원 등록 — 화면 정의 예정')"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>연수원등록</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width:1200px">
+          <thead><tr><th style="width:60px">No</th><th style="text-align:left">연수원명</th><th>연수원코드</th><th>연수원구분</th><th>그룹사명</th><th>그룹사코드</th><th>계약기간</th><th>영업대표</th><th>운영담당자</th><th style="width:90px">관리</th></tr></thead>
+          <tbody id="slBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="slPager"></div>
+    </div>`;
+  document.getElementById('slType').onchange = e => sl.type = e.target.value;
+  const kw = document.getElementById('slKeyword');
+  kw.oninput = e => sl.keyword = e.target.value;
+  kw.onkeydown = e => { if(e.key==='Enter') slSearch(); };
+  renderSlTable();
+}
+function renderSlTable(){
+  const rows = slFiltered(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/sl.size));
+  if(sl.page > pages) sl.page = pages;
+  const slice = rows.slice((sl.page-1)*sl.size, sl.page*sl.size);
+  document.getElementById('slCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('slBody').innerHTML = total ? slice.map(r=>`<tr>
+      <td>${r.no}</td><td style="text-align:left"><button class="link" onclick="goSiteEdms(${r.no})">${escapeHtml(r.name)}</button></td>
+      <td>${r.code}</td><td>${r.kind}</td><td>${escapeHtml(r.group)}</td><td>${r.groupCode}</td><td>${r.period}</td><td>${r.sales}</td><td>${r.op}</td>
+      <td><button class="btn btn-line btn-sm" onclick="openSiteManage(${r.no})">관리</button></td></tr>`).join('')
+    : `<tr class="empty"><td colspan="10">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('slPager').innerHTML = pagerHtml(sl.page, pages, 'slMovePage');
+}
+function slSearch(){ sl.applied = {type:sl.type, keyword:sl.keyword}; sl.page = 1; renderSlTable(); }
+function slReset(){ sl.type='name'; sl.keyword=''; sl.applied={type:'name', keyword:''}; sl.page=1; renderSiteList(); }
+function slMovePage(n){ sl.page = n; renderSlTable(); }
+
+// 연수원명 클릭 → 연수원별 EDMS 아웃링크 (프로토타입: 얼럿만 노출)
+function goSiteEdms(no){
+  const r = SITES[no-1];
+  alert(`[${r.name}] EDMS로 이동합니다.\n(새 창: https://${r.commonId}${SITE_DOMAIN})`);
+}
+
+/* =========================================================
+   연수원 상세 ([관리] 버튼) — 캡처 기준, 아코디언 5개 섹션
+   ========================================================= */
+const SITE_DOMAIN = '.labs.dev.hunet.co.kr';   // 환경별 도메인 자동 연결(캡처는 DEV 환경)
+const ENCOURAGE_ITEMS = [
+  {key:'svcGuide', label:'서비스 이용안내 메일', target:'전체'},
+  {key:'popNow',   label:'인기 콘텐츠 (지금)',   target:'전체'},
+  {key:'popMonth', label:'인기 콘텐츠 (이번 달)', target:'전체'},
+  {key:'endSoon',  label:'서비스 종료 예정 안내', target:'전체'},
+  {key:'endNotice',label:'서비스 종료 안내',     target:'전체'},
+  {key:'monthly',  label:'월간 이용 현황',       target:'교담자'}
+];
+// 그룹사·계열사 후보 기업 — 각 연수원의 대표 기업(가상)
+const CORP_CANDIDATES = SITES.map(x => ({ name: x.group.replace(/ 그룹$/,'') + ' 기업', code: x.corpCode30, site: x.name, siteCode: x.code }));
+const sm = { no:null, form:null, open:{1:true,2:true,3:true,4:true,5:true}, q:'' };
+
+function openSiteManage(no){
+  const r = SITES[no-1];
+  const own = CORP_CANDIDATES[no-1];
+  sm.no = no; sm.q = ''; sm.open = {1:true,2:true,3:true,4:true,5:true,6:true};
+  sm.form = {
+    kind:r.kind, name:r.name, commonId:r.commonId, join:r.join, cateType:r.cateType,
+    from:r.period.split(' ~ ')[0], to:r.period.split(' ~ ')[1],
+    encourage:{...r.encourage},
+    learn:{...(r.learn || SITE_LEARN_DEFAULT)},
+    selected:[{...own}], groupCode: own.code     // 기본: 연수원 대표 기업 = 그룹사
+  };
+  currentPage='site-manage'; openGroup='site'; renderLnb(); renderPage();
+}
+function smToggle(n){ sm.open[n] = !sm.open[n]; renderSiteManage(); }
+function smSet(key, v){ sm.form[key] = v; }
+function smAdd(code){ const c = CORP_CANDIDATES.find(x=>x.code===code); if(!sm.form.selected.some(x=>x.code===code)) sm.form.selected.push({...c}); renderSiteManage(); }
+function smRemove(code){
+  if(sm.form.selected.length===1){ toast('최소 1개 기업이 등록되어야 합니다.'); return; }
+  sm.form.selected = sm.form.selected.filter(x=>x.code!==code);
+  if(sm.form.groupCode===code) sm.form.groupCode = sm.form.selected[0].code;
+  renderSiteManage();
+}
+function smGroup(code){ sm.form.groupCode = code; renderSiteManage(); }
+
+function renderSiteManage(){
+  const r = SITES[sm.no-1], f = sm.form;
+  const radios = (name, opts, cur, onchg) => `<div class="yn">${opts.map(o=>`<label><input type="radio" name="${name}" value="${o.v}" ${cur===o.v?'checked':''} onchange="${onchg}">${o.l}</label>`).join('')}</div>`;
+  const acc = (n, title, body) => `
+    <section class="acc ${sm.open[n]?'open':''}">
+      <button class="acc-head" onclick="smToggle(${n})"><span>${n}. ${title}</span><svg viewBox="0 0 12 12"><path d="M3 7.5l3-3 3 3"/></svg></button>
+      ${sm.open[n] ? `<div class="acc-body">${body}</div>` : ''}
+    </section>`;
+  const q = sm.q.trim().toLowerCase();
+  const cands = q ? CORP_CANDIDATES.filter(c => c.name.toLowerCase().includes(q) || String(c.code).includes(q)) : f.selected;
+  const val = v => v==='-' ? '-' : escapeHtml(String(v));
+  const c = r.contacts;
+  const pageTitle = /연수원$/.test(r.name) ? `${r.name} 상세` : `${r.name} 연수원 상세`;
+
+  const sec1 = `
+    <table class="kv-table form-table">
+      <tr><th>구분<i>*</i></th><td>${radios('smKind', [{v:'표준',l:'표준(일반)'},{v:'FLEX(Basic)',l:'FLEX(Basic)'},{v:'FLEX(Standard)',l:'FLEX(Standard)'},{v:'FLEX(Premium)',l:'FLEX(Premium)'}], f.kind, "smSet('kind',this.value)")}</td></tr>
+      <tr><th>연수원명<i>*</i></th><td><input class="input" id="smName" value="${escapeHtml(f.name)}" oninput="smSet('name',this.value)"></td></tr>
+      <tr><th>공통 ID<i>*</i></th><td>
+        <div class="inline"><input class="input" style="width:180px" id="smId" maxlength="10" value="${escapeHtml(f.commonId)}" oninput="smSet('commonId',this.value)"><span class="suffix">${SITE_DOMAIN}</span></div>
+        <p class="hint">영문 소문자와 숫자만 최대 10자까지 입력할 수 있으며, 환경별 도메인이 자동으로 연결됩니다.</p></td></tr>
+      <tr><th>회원가입</th><td>${radios('smJoin', [{v:'Y',l:'Y'},{v:'N',l:'N'}], f.join, "smSet('join',this.value)")}</td></tr>
+      <tr><th>카테고리 유형</th><td>${radios('smCate', [{v:'표준',l:'표준'},{v:'기업자체',l:'기업자체'}], f.cateType, "smSet('cateType',this.value)")}</td></tr>
+      <tr><th>계약기간<i>*</i></th><td><div class="date-range" style="width:max-content"><input type="date" value="${f.from}" onchange="smSet('from',this.value)"> ~ <input type="date" value="${f.to}" onchange="smSet('to',this.value)"></div></td></tr>
+    </table>`;
+
+  const sec2 = `
+    <div class="search-input" style="margin-bottom:12px"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input id="smQ" style="width:100%" placeholder="기업명 또는 기업코드를 검색하세요." value="${escapeHtml(sm.q)}" onkeydown="if(event.key==='Enter'){sm.q=this.value;renderSiteManage();}"></div>
+    <div class="corp-pick">
+      <div class="table-wrap corp-list">
+        <table style="min-width:0">
+          <thead><tr><th style="text-align:left;padding-left:16px">기업명</th><th>기업코드</th><th style="text-align:left">소속연수원</th><th>연수원코드</th><th>그룹사</th><th>상태 / 추가</th></tr></thead>
+          <tbody>${cands.length ? cands.map(x => {
+            const sel = f.selected.some(y=>y.code===x.code);
+            return `<tr><td style="text-align:left;padding-left:16px">${escapeHtml(x.name)}</td><td>${x.code}</td><td style="text-align:left">${escapeHtml(x.site)}</td><td>${x.siteCode}</td>
+              <td><input type="radio" name="smGroupR" ${f.groupCode===x.code?'checked':''} ${sel?'':'disabled'} onchange="smGroup(${x.code})" style="accent-color:#374151"></td>
+              <td>${sel ? '<span class="picked">✓ 현재 선택</span>' : `<button class="btn btn-line btn-sm" onclick="smAdd(${x.code})">추가</button>`}</td></tr>`;}).join('')
+            : `<tr class="empty"><td colspan="6" style="height:100px">검색 결과가 없습니다.</td></tr>`}</tbody>
+        </table>
+      </div>
+      <div class="corp-selected">
+        <div class="cs-head"><b>선택한 기업</b><span>${f.selected.length}개</span></div>
+        ${f.selected.map(x=>`<div class="cs-card"><div><b>${escapeHtml(x.name)}</b><small>${f.groupCode===x.code?'그룹사':'계열사'} · 기업코드 ${x.code}</small></div>
+          <button class="icon-btn" onclick="smRemove(${x.code})" aria-label="삭제"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button></div>`).join('')}
+      </div>
+    </div>`;
+
+  const sec3 = `
+    <div class="table-wrap">
+      <table class="setting-table">
+        <thead><tr><th class="l">구분</th><th style="width:100px">대상</th><th style="width:140px">사용여부</th></tr></thead>
+        <tbody>${ENCOURAGE_ITEMS.map(it=>`<tr><td class="l">${it.label}</td><td>${it.target}</td>
+          <td>${radios('enc-'+it.key, [{v:'Y',l:'Y'},{v:'N',l:'N'}], f.encourage[it.key], `sm.form.encourage['${it.key}']=this.value`)}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+
+  const secLearn = `
+    <div class="table-wrap">
+      <table class="setting-table">
+        <thead><tr><th class="l">구분</th><th style="width:160px;text-align:right;padding-right:22px">설정</th></tr></thead>
+        <tbody>${SITE_LEARN_ITEMS.map(it=>`<tr>
+          <td class="l">${it.label}</td>
+          <td><label class="toggle">
+            <span class="toggle-state" id="sls-${it.key}">${f.learn[it.key]}</span>
+            <input type="checkbox" id="slt-${it.key}" ${f.learn[it.key]===it.opts[1]?'checked':''} onchange="sm.form.learn['${it.key}'] = this.checked ? '${it.opts[1]}' : '${it.opts[0]}'; document.getElementById('sls-${it.key}').textContent = sm.form.learn['${it.key}']">
+            <span class="switch"></span>
+          </label></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <p class="hint" style="margin-top:8px">※ 연수원 설정은 상품(Pricing policy) 생성 시 기본값으로 적용되며, 이미 생성된 상품에는 반영되지 않습니다.</p>`;
+
+  const sec4 = `
+    <table class="kv-table kv-2col">
+      <tr><th>기업담당자</th><td>${val(c.mgr)}</td><th>기업담당자 연락처</th><td>${val(c.mgrTel)}</td></tr>
+      <tr><th>기업담당자 이메일</th><td>${val(c.mgrMail)}</td><th>정산담당자</th><td>${val(c.settle)}</td></tr>
+      <tr><th>정산담당자 연락처</th><td>${val(c.settleTel)}</td><th>정산담당자 이메일</th><td>${val(c.settleMail)}</td></tr>
+      <tr><th>휴넷 영업담당자</th><td>${val(c.sales)}</td><th>휴넷 교육담당자</th><td>${val(c.edu)}</td></tr>
+    </table>`;
+
+  const groupCorp = f.selected.find(x=>x.code===f.groupCode);
+  const sec5 = `
+    <table class="kv-table kv-2col">
+      <tr><th>기업코드 | 3.0 기업코드</th><td>${r.corpCode} | ${groupCorp.code}</td><th>기업명</th><td>${escapeHtml(groupCorp.name)}</td></tr>
+      <tr><th>사업자번호</th><td>${r.bizNo}</td><th>턴키기업여부</th><td>${r.turnkey}</td></tr>
+      <tr><th>계산서발행유형</th><td>${r.invoice}</td><th></th><td></td></tr>
+    </table>`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>${escapeHtml(pageTitle)}</h1>
+      <div class="breadcrumb">홈 <span>›</span> 연수원 관리 <span>›</span> 연수원 관리목록 <span>›</span> <b>연수원 상세</b></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn btn-line" style="height:36px" onclick="toast('개설 안내 메일 발송 — 화면 정의 예정')"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>개설 안내 메일</button>
+      </div>
+      ${acc(1,'연수원 기본 정보',sec1)}
+      ${acc(2,'그룹사 및 계열사 등록',sec2)}
+      ${acc(3,'연수원 독려정보',sec3)}
+      ${acc(4,'학습 설정',secLearn)}
+      ${acc(5,'연수원 담당자 정보',sec4)}
+      ${acc(6,'연수원 기업 정보',sec5)}
+      <div class="form-foot">
+        <button class="btn btn-line" onclick="go('site-list','site')">취소</button>
+        <button class="btn btn-primary" onclick="saveSiteManage()"><svg viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h8V3M8 21v-7h8v7"/></svg>저장</button>
+      </div>
+    </div>`;
+}
+function saveSiteManage(){
+  const f = sm.form;
+  if(!f.name.trim()){ toast('연수원명을 입력해주세요.'); return; }
+  if(!/^[a-z0-9]{1,10}$/.test(f.commonId)){ toast('공통 ID는 영문 소문자와 숫자만 최대 10자까지 입력할 수 있습니다.'); return; }
+  if(!f.from || !f.to){ toast('계약기간을 선택해주세요.'); return; }
+  if(f.from > f.to){ toast('계약 종료일은 시작일 이후로 선택해주세요.'); return; }
+  const r = SITES[sm.no-1];
+  Object.assign(r, { kind:f.kind, name:f.name.trim(), commonId:f.commonId, join:f.join, cateType:f.cateType, period:`${f.from} ~ ${f.to}`, encourage:{...f.encourage}, learn:{...f.learn} });
+  toast('저장되었습니다.'); renderSiteManage();
+}
+
+/* =========================================================
+   아카이브 현황 > 학습시간 조회
+   - 목록: 임직원별 아카이브 누적시간 / 상세: 임직원 1명의 학습 목록
+   - 검색 조건(학습일 연·월, 과정유형)은 요약·목록에 동일 적용
+   - 과정유형 선택 시: 미선택 유형 칸 '-', 총 누적시간 = 선택 유형 합계, 이수여부 '-'
+   ========================================================= */
+const afInit = () => ({ year:'', month:'', cat:'' });
+const atInit = () => ({ ...afInit(), site:'', kType:'name', keyword:'' });   // 목록은 기간·과정유형 필터 없음(전체 기간 누적)
+const at = { tab:'person', form: atInit(), applied: atInit(), page:1, size:20 };   // 목록 (탭: person 개인별 / corp 기업별)
+const atd = { id:null, form: afInit(), applied: afInit(), page:1, size:20 }; // 상세
+
+// 훈련과정 ID — 가상 값(HRD-Net 훈련과정 ID 형식 가정). 연수원(계약) 단위로 부여된다고 가정, 미등록 연수원은 '-'
+function trainingIdOf(e){ return Number(e.siteCode) % 4 === 0 ? '-' : `AIG2026${String(Number(e.siteCode) * 7 % 1000000).padStart(10,'0')}`; }
+function archiveCalc(e, f){
+  const ar = archiveOf(e);
+  const base = ar.list.filter(x => (!f.year || x.date.startsWith(f.year)) && (!f.month || x.date.slice(5,7) === f.month));
+  const by = Object.fromEntries(ARCHIVE_CATS.map(c => [c, base.filter(x=>x.cat===c).reduce((a,x)=>a+x.sec,0)]));
+  const total = Object.values(by).reduce((a,v)=>a+v,0);
+  return { by, total, sumTotal: f.cat ? by[f.cat] : total, rows: f.cat ? base.filter(x=>x.cat===f.cat) : base };
+}
+const passCell = (f, total) => f.cat ? '-' : (total >= ARCHIVE_PASS_SEC ? 'Y' : 'N');   // 이수여부 Y/N, 색 구분 없음
+const catCells = (f, by) => ARCHIVE_CATS.map(c=>`<td>${f.cat && f.cat!==c ? '-' : hms(by[c])}</td>`).join('');
+
+// 학습일(연·월) + 과정유형(라디오) 필터 HTML
+function periodTypeFilter(fm, prefix){
+  return `
+        <div class="field"><label>학습일</label><div class="inputs">
+          <select class="select" style="width:100px" id="${prefix}Year" onchange="const m=document.getElementById('${prefix}Month'); m.disabled=!this.value; if(!this.value) m.value='';">
+            <option value="">전체</option>${['2026','2025','2024'].map(y=>`<option value="${y}" ${fm.year===y?'selected':''}>${y}년</option>`).join('')}</select>
+          <select class="select" style="width:90px" id="${prefix}Month" ${fm.year?'':'disabled'}>
+            <option value="">전체</option>${Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(m=>`<option value="${m}" ${fm.month===m?'selected':''}>${Number(m)}월</option>`).join('')}</select>
+        </div></div>
+        <div class="field"><label>과정유형</label><div class="inputs">
+          <div class="yn radio-row">${[['','전체'], ...ARCHIVE_CATS.map(c=>[c,c])].map(([v,l])=>`<label><input type="radio" name="${prefix}Cat" value="${v}" ${fm.cat===v?'checked':''}>${l}</label>`).join('')}</div></div></div>`;
+}
+function readPeriodType(prefix){
+  const v = id => document.getElementById(id).value;
+  return { year:v(prefix+'Year'), month:v(prefix+'Year') ? v(prefix+'Month') : '', cat:(document.querySelector(`input[name="${prefix}Cat"]:checked`)||{}).value || '' };
+}
+
+// ── 목록
+function renderArchiveList(){
+  const f = at.form;
+  const sites = [...new Set(EMPLOYEES.map(e=>e.siteName))];
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>학습시간 조회</h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> <b>학습시간 조회</b></div>
+    </div>
+    <div class="card">
+      <div class="tabs">
+        <button class="tab ${at.tab==='person'?'on':''}" onclick="setAtTab('person')">개인별 현황</button>
+        <button class="tab ${at.tab==='corp'?'on':''}" onclick="setAtTab('corp')">기업별 현황</button>
+      </div>
+      <div class="filter-box">
+        <div class="filter-row">
+          <div class="field"><label>연수원명</label><div class="inputs"><select class="select wide" id="atSite">${opt(sites, f.site, '전체 연수원')}</select></div></div>
+          <div class="field" style="display:${at.tab==='person'?'block':'none'}"><label>임직원 검색</label><div class="inputs">
+            <select class="select" style="width:90px" id="atKType"><option value="name" ${f.kType==='name'?'selected':''}>이름</option><option value="loginId" ${f.kType==='loginId'?'selected':''}>아이디</option></select>
+            <div class="search-input sm"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.keyword)}"></div>
+          </div></div>
+          <div class="btns">
+            <button class="btn btn-primary" onclick="atSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+            <button class="btn btn-line" onclick="atReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-head">
+        <div class="count" id="atCount"></div>
+        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width:${at.tab==='person' ? 1100 : 1280}px;table-layout:fixed">
+          <thead><tr>${at.tab==='person'
+            ? `<th style="width:50px">No.</th><th style="width:70px">이름</th><th style="width:160px">아이디</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:200px">연수원명</th><th style="width:170px">훈련과정 ID</th>
+               <th style="width:240px">총 누적시간</th><th style="width:90px">이수여부</th>`
+            : `<th style="width:50px">No.</th><th style="text-align:left;width:170px">연수원명</th><th style="text-align:left;width:150px">기업명</th><th style="width:70px">학습자 수</th>
+               <th>총 누적시간</th>${ARCHIVE_CATS.map(c=>`<th>${c} 누적시간</th>`).join('')}<th style="width:64px">이수</th><th style="width:64px">미이수</th>`}</tr></thead>
+          <tbody id="atBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination" id="atPager"></div>
+    </div>`;
+  document.getElementById('atKeyword').onkeydown = e => { if(e.key==='Enter') atSearch(); };
+  renderAtTable();
+}
+function atRows(){
+  const f = at.applied, q = f.keyword.trim().toLowerCase();
+  return EMPLOYEES.filter(e => (!f.site || e.siteName===f.site) && (!q || String(e[f.kType]).toLowerCase().includes(q)))
+    .map(e => ({ e, c: archiveCalc(e, f) }));
+}
+function renderAtTable(){
+  if(at.tab==='corp'){ renderAtCorpTable(); return; }
+  const f = at.applied, rows = atRows(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/at.size));
+  if(at.page > pages) at.page = pages;
+  const slice = rows.slice((at.page-1)*at.size, at.page*at.size);
+  document.getElementById('atCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('atBody').innerHTML = total ? slice.map(({e,c},i)=>`<tr>
+      <td>${(at.page-1)*at.size + i + 1}</td>
+      <td><button class="link" onclick="openArchiveDetail(${e.id})">${e.name}</button></td><td>${e.loginId}</td>
+      <td>${e.siteCode}</td><td style="text-align:left">${escapeHtml(e.siteName)}</td><td>${trainingIdOf(e)}</td>
+      <td>${hms(c.sumTotal)}</td><td>${passCell(f, c.total)}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="8">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
+}
+
+// 기업별 현황 — 연수원(기업) 단위 집계. 학습자 수 = 조회 조건 내 아카이브 이력이 있는 임직원 수
+function setAtTab(t){ at.tab = t; at.page = 1; if(t==='corp'){ at.form.keyword=''; at.applied.keyword=''; } renderArchiveList(); }
+function atCorpRows(){
+  const f = at.applied;
+  const groups = {};
+  EMPLOYEES.filter(e => !f.site || e.siteName===f.site).forEach(e => {
+    const c = archiveCalc(e, f);
+    const g = groups[e.siteCode] || (groups[e.siteCode] = { siteName:e.siteName, corpName:e.corpName, learners:0, by:Object.fromEntries(ARCHIVE_CATS.map(x=>[x,0])), sumTotal:0, pass:0, fail:0 });
+    if(!c.rows.length) return;
+    g.learners++; g.sumTotal += c.sumTotal;
+    ARCHIVE_CATS.forEach(x => g.by[x] += c.by[x]);
+    if(c.total >= ARCHIVE_PASS_SEC) g.pass++; else g.fail++;
+  });
+  return Object.values(groups);
+}
+function renderAtCorpTable(){
+  const f = at.applied, rows = atCorpRows(), total = rows.length;
+  const pages = Math.max(1, Math.ceil(total/at.size));
+  if(at.page > pages) at.page = pages;
+  const slice = rows.slice((at.page-1)*at.size, at.page*at.size);
+  document.getElementById('atCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('atBody').innerHTML = total ? slice.map((g,i)=>`<tr>
+      <td>${(at.page-1)*at.size + i + 1}</td>
+      <td style="text-align:left"><button class="link" onclick="atDrillSite('${g.siteName.replace(/'/g,"\\'")}')">${escapeHtml(g.siteName)}</button></td>
+      <td style="text-align:left">${escapeHtml(g.corpName)}</td><td>${g.learners}명</td>
+      <td>${hms(g.sumTotal)}</td>${catCells(f, g.by)}
+      <td>${f.cat ? '-' : g.pass+'명'}</td><td>${f.cat ? '-' : g.fail+'명'}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="${6 + ARCHIVE_CATS.length}">검색 결과가 없습니다.</td></tr>`;
+  document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
+}
+// 연수원명 클릭 → 개인별 현황 탭으로 전환(해당 연수원 + 현재 조건 유지)
+function atDrillSite(name){ at.tab = 'person'; at.form.site = name; at.applied.site = name; at.page = 1; renderArchiveList(); }
+
+function atSearch(){
+  at.form = { ...afInit(), site: document.getElementById('atSite').value, kType: document.getElementById('atKType').value, keyword: document.getElementById('atKeyword').value };
+  at.applied = {...at.form}; at.page = 1; renderArchiveList();
+}
+function atReset(){ at.form = atInit(); at.applied = atInit(); at.page = 1; renderArchiveList(); }
+function atMovePage(n){ at.page = n; renderAtTable(); }
+
+// ── 상세 (이름 클릭) — 목록의 학습일·과정유형 조건을 이어받음
+function openArchiveDetail(id){
+  atd.id = id; atd.form = afInit(); atd.applied = afInit(); atd.page = 1;
+  currentPage='archive-time-detail'; openGroup='archive'; renderLnb(); renderPage();
+}
+function renderArchiveDetail(){
+  const e = EMPLOYEES[atd.id-1], f = atd.applied;
+  const all = archiveCalc(e, afInit());   // 상단 요약: 전체 기간·전체 과정유형 기준(검색 조건 미적용)
+  const c = archiveCalc(e, f);            // 하단 목록: 검색 조건 적용
+  const pages = Math.max(1, Math.ceil(c.rows.length/atd.size));
+  const slice = c.rows.slice((atd.page-1)*atd.size, atd.page*atd.size);
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>학습시간 상세 <span class="title-sub">${e.name} · ${e.loginId} · ${escapeHtml(e.siteName)}</span></h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 학습시간 조회 <span>›</span> <b>학습시간 상세</b></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table class="summary-table archive-sum">
+          <thead><tr><th>총 누적시간</th>${ARCHIVE_CATS.map(x=>`<th>${x} 누적시간</th>`).join('')}<th>이수여부</th></tr></thead>
+          <tbody><tr><td>${hms(all.total)}</td>${ARCHIVE_CATS.map(x=>`<td>${hms(all.by[x])}</td>`).join('')}<td>${passCell(afInit(), all.total)}</td></tr></tbody>
+        </table>
+      </div>
+
+      <h3 class="sub-title">아카이브 학습 이력</h3>
+      <div class="filter-box">
+        <div class="filter-row">
+          ${periodTypeFilter(atd.form, 'atd')}
+          <div class="btns">
+            <button class="btn btn-primary" onclick="atdSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
+            <button class="btn btn-line" onclick="atdReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
+          </div>
+        </div>
+      </div>
+      <div class="table-head">
+        <div class="count">검색결과 ${c.rows.length.toLocaleString()}건</div>
+        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+      </div>
+      <div class="table-wrap">
+        <table style="min-width:1200px">
+          <thead><tr><th style="width:56px">No.</th><th style="width:100px">과정유형</th><th>과정명</th><th style="width:100px">과정 학습시간</th><th style="width:200px">실 재생시간</th><th style="width:200px">아카이브 인정시간</th><th style="width:110px">학습일</th><th style="width:110px">수료처리일</th></tr></thead>
+          <tbody>
+            ${c.rows.length ? slice.map(x=>`<tr><td>${x.no}</td><td>${x.cat}</td><td>${escapeHtml(x.title)}</td><td>${x.studyH}시간</td><td>${x.dur===null ? '-' : hms(x.dur)}</td><td>${hms(x.sec)}</td><td>${x.date}</td><td>${x.doneDate}</td></tr>`).join('')
+            : `<tr class="empty"><td colspan="8">검색 결과가 없습니다.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      ${c.rows.length ? `<div class="pagination">${pagerHtml(atd.page, pages, 'atdMovePage')}</div>` : ''}
+      <div class="back-foot"><button class="btn btn-line" onclick="go('archive-time','archive')"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button></div>
+    </div>`;
+}
+function atdSearch(){ atd.form = readPeriodType('atd'); atd.applied = {...atd.form}; atd.page = 1; renderArchiveDetail(); }
+function atdReset(){ atd.form = afInit(); atd.applied = afInit(); atd.page = 1; renderArchiveDetail(); }
+function atdMovePage(n){ atd.page = n; renderArchiveDetail(); }
+
+function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
+
+/* =========================================================
+   딥링크 (URL 해시) — 목록 / 상세 / 탭 단위로 링크 공유
+   형식: #페이지ID[/파라미터...]
+   ========================================================= */
+const PAGE_GROUP = {
+  'cprod-list':'cprod','cprod-detail':'cprod','pcorp-list':'pcorp','pcorp-detail':'pcorp',
+  'emp-list':'emp','emp-detail':'emp','learn-course':'learn','learn-course-detail':'learn',
+  'client-list':'client','client-detail':'client','site-list':'site','site-manage':'site',
+  'archive-time':'archive','archive-time-detail':'archive','file-download':null
+};
+let routing = false;
+function stateToHash(){
+  switch(currentPage){
+    case 'cprod-detail': return `cprod-detail/${encodeURIComponent(detail.siteCode)}`;
+    case 'pcorp-detail': return `pcorp-detail/${pdetail.no}/${pdetail.tab}`;
+    case 'emp-detail': return `emp-detail/${edetail.id}/${edetail.tab}`;
+    case 'learn-course-detail': return `learn-course-detail/${lcd.no}`;
+    case 'client-list': return `client-list/${cls.tab}`;
+    case 'client-detail': return `client-detail/${clDetailKind}/${clDetail.no}`;
+    case 'site-manage': return `site-manage/${sm.no}`;
+    case 'archive-time': return `archive-time/${at.tab}`;
+    case 'archive-time-detail': return `archive-time-detail/${atd.id}`;
+    default: return currentPage;
+  }
+}
+function syncHash(){
+  if(routing) return;
+  const h = '#' + stateToHash();
+  if(location.hash !== h) history.pushState(null, '', h);
+}
+function routeFromHash(){
+  const [page, a, b] = decodeURIComponent(location.hash.slice(1)).split('/');
+  routing = true;
+  try{
+    switch(page){
+      case 'cprod-detail': openDetail(a); break;
+      case 'pcorp-detail': openProdDetail(+a); if(b) setProdTab(b); break;
+      case 'emp-detail': openEmpDetail(+a); if(b) setEmpTab(b); break;
+      case 'learn-course-detail': openLcDetail(+a); break;
+      case 'client-list': go('client-list','client'); if(a) setClientTab(a); break;
+      case 'client-detail': openClientDetail(a, +b); break;
+      case 'site-manage': openSiteManage(+a); break;
+      case 'archive-time': go('archive-time','archive'); if(a) setAtTab(a); break;
+      case 'archive-time-detail': openArchiveDetail(+a); break;
+      default:
+        if(page in PAGE_GROUP) go(page, PAGE_GROUP[page]);
+        else { renderLnb(); renderPage(); }
+    }
+  }catch(err){ currentPage='cprod-list'; openGroup='cprod'; renderLnb(); renderPage(); }
+  routing = false;
+}
+// 화면 전환·탭 전환 시 해시 갱신
+let clDetailKind = 'customer';
+const _openClientDetail = openClientDetail;
+openClientDetail = function(tab, no){ clDetailKind = tab; _openClientDetail(tab, no); };
+['renderPage','setProdTab','setEmpTab','setClientTab','setAtTab','atDrillSite'].forEach(fn => {
+  const orig = window[fn];
+  window[fn] = function(...args){ const r = orig.apply(this, args); syncHash(); return r; };
+});
+window.addEventListener('popstate', routeFromHash);
+
+if(location.hash.length > 1) routeFromHash();
+else { routing = true; renderLnb(); renderPage(); routing = false; history.replaceState(null, '', '#' + stateToHash()); }
+</script>
+</body>
+</html>
