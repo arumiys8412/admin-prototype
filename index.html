@@ -316,6 +316,55 @@
   .limit-input input:disabled{background:#f3f4f6;color:var(--text-mute);cursor:not-allowed}
   .modal-placeholder{border:1px dashed #d1d5db;border-radius:8px;padding:48px 0;text-align:center;font-size:12px;color:var(--text-mute)}
 
+
+  /* 기간 선택(Date Range Picker) — 공통 컴포넌트 */
+  .drp{position:relative}
+  .drp-input{display:flex;align-items:center;height:32px;min-width:230px;border:1px solid var(--line);border-radius:6px;background:#fff;padding:0;font-size:12px;color:var(--text);text-align:left}
+  .drp-input span{flex:1;padding:0 10px;white-space:nowrap}
+  .drp-input em{font-style:normal;color:var(--text-mute)}
+  .drp-input i{display:flex;align-items:center;justify-content:center;width:32px;height:100%;border-left:1px solid var(--line)}
+  .drp-input i svg{width:14px;height:14px;stroke:#374151;fill:none;stroke-width:1.8}
+  .drp.open .drp-input{border-color:var(--navy)}
+  .drp-pop{position:absolute;top:calc(100% + 6px);left:0;z-index:60;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.14);width:max-content}
+  .drp-body{display:flex}
+  .drp-presets{width:118px;padding:14px 10px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:4px}
+  .drp-presets button{height:34px;border:0;border-radius:8px;background:transparent;text-align:left;padding:0 12px;font-size:12px;color:#374151}
+  .drp-presets button:hover{background:#f9fafb}
+  .drp-presets button.on{background:#f3f4f6;font-weight:700;color:var(--text)}
+  .drp-cal{padding:16px 18px 14px;width:292px}
+  .drp-cal + .drp-cal{border-left:1px solid var(--line)}
+  .drp-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+  .drp-month{border:0;background:transparent;font-size:13px;font-weight:700;color:var(--text);padding:2px;cursor:pointer;outline:none}
+  .drp-nav{display:flex;gap:2px}
+  .drp-nav button{width:26px;height:26px;border:0;border-radius:6px;background:transparent;font-size:16px;line-height:1;color:var(--text)}
+  .drp-nav button:hover{background:#f3f4f6}
+  .drp-grid{width:100%;min-width:0;border-collapse:collapse;table-layout:fixed}
+  .drp-grid thead th{height:28px;background:none;border:0;font-size:11px;font-weight:600;color:#374151;padding:0}
+  .drp-grid tbody td{height:32px;padding:0;border:0;font-size:12px;text-align:center}
+  .drp-grid tbody tr:hover td{background:transparent}
+  .drp-grid tbody tr td.in,.drp-grid tbody tr:hover td.in{background:#f1f2f4}
+  .drp-grid td button{width:30px;height:30px;border:1px solid transparent;border-radius:50%;background:transparent;font-size:12px;color:var(--text);padding:0}
+  .drp-grid td button:hover{border-color:#d1d5db}
+  .drp-grid th.sun,.drp-grid td.sun button{color:#e11d48}
+  .drp-grid td.out span{color:#d1d5db}
+  .drp-grid td.out.sun span{color:#f9c4cf}
+  .drp-grid td.s button,.drp-grid td.e button{border-color:#374151;background:#fff;font-weight:600}
+  .drp-foot{display:flex;align-items:flex-end;gap:10px;padding:14px 16px 16px;border-top:1px solid var(--line)}
+  .drp-field label{display:block;font-size:11px;font-weight:600;margin-bottom:6px}
+  .drp-field input{height:34px;width:150px;border:1px solid var(--line);border-radius:6px;padding:0 10px;font-size:12px;font-family:inherit;outline:none}
+  .drp-field input:focus{border-color:var(--navy)}
+  .drp-tilde{height:34px;display:flex;align-items:center;color:var(--text-sub)}
+  .drp-btns{margin-left:auto;padding-left:24px;display:flex;gap:6px}
+  .drp-btns .btn{height:34px;padding:0 14px;font-size:12px}
+
+  /* 세그먼트 버튼(단일 선택) */
+  .seg{display:inline-flex;height:32px;padding:2px;border:1px solid var(--line);border-radius:8px;background:#fff}
+  .seg button{min-width:60px;padding:0 12px;border:0;border-radius:6px;background:transparent;font-size:12px;font-weight:500;color:var(--text-sub)}
+  .seg button:hover:not(.on){color:var(--text)}
+  .seg button.on{background:#3f3f46;color:#fff;font-weight:700}
+  .search-input.xs input{width:170px}
+  .filter-row.nowrap{flex-wrap:nowrap}
+  .filter-row.nowrap .btns{flex-shrink:0}
   .toast{position:fixed;left:50%;bottom:32px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;opacity:0;transition:.2s;pointer-events:none;z-index:200}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -403,7 +452,7 @@ const MENUS = [
     children:[{id:'pcorp-list', label:'상품별 기업관리 목록'}]},
   {id:'cate',  label:'카테고리 관리',   icon:'layer'},
   {id:'archive', label:'아카이브 현황', icon:'layer',
-    children:[{id:'archive-time', label:'학습시간 조회'}]},
+    children:[{id:'archive-time', label:'학습시간 조회'}, {id:'archive-login', label:'로그인 이력 조회'}, {id:'archive-remind', label:'독려 발송내역'}, {id:'archive-stats', label:'통계 관리'}]},
   {id:'cs',    label:'고객행복센터',    icon:'headset'},
   {id:'contract', label:'계약관리',     icon:'doc'},
   {id:'addon', label:'부가서비스',      icon:'plus'}
@@ -1193,6 +1242,8 @@ function hms(sec){
   const t = [h?`${h}시간`:'', (h||m)?`${m}분`:'', `${x}초`].filter(Boolean).join(' ');
   return sec >= 60 ? `${t}(${sec}초)` : t;
 }
+// 시간 표기(초 환산 없음) — 'H시간 M분 S초'
+function hmsText(sec){ const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), x = sec % 60; return [h?`${h}시간`:'', (h||m)?`${m}분`:'', `${x}초`].filter(Boolean).join(' '); }
 function hm(min){ if(!min) return '0분'; const h = Math.floor(min/60), m = min % 60; return (h ? `${h}시간 ` : '') + (m ? `${m}분` : '').trim() || `${h}시간`; }
 function empCourseMovePage(n){ edetail.page = n; renderEmpDetail(); }
 
@@ -2076,44 +2127,219 @@ function saveSiteManage(){
    - 검색 조건(학습일 연·월, 과정유형)은 요약·목록에 동일 적용
    - 과정유형 선택 시: 미선택 유형 칸 '-', 총 누적시간 = 선택 유형 합계, 이수여부 '-'
    ========================================================= */
-const afInit = () => ({ year:'', month:'', cat:'' });
-const atInit = () => ({ ...afInit(), site:'', kType:'name', keyword:'' });   // 목록은 기간·과정유형 필터 없음(전체 기간 누적)
+const afInit = () => ({ from:'', to:'', cat:'' });   // 학습일 기간(YYYY-MM-DD) + 과정유형
+const atInit = () => ({ ...afInit(), sType:'siteName', siteKw:'', work:'재직', trainId:'', kType:'name', keyword:'' });
+// 근무상태 — 재직 / 모니터링. 프로토타입: 임직원 근무상태가 '재직'이 아니면 '모니터링'으로 표시(가안 — 기획 확인 필요)
+const WORK_STATES = ['재직','모니터링'];
+function workStateOf(e){ return e.status==='재직' ? '재직' : '모니터링'; }
+const workChip = e => `<span class="chip ${workStateOf(e)==='재직'?'':'off'}">${workStateOf(e)}</span>`;
+function atSetWork(v){ at.form.work = v; document.querySelectorAll('#atWork button').forEach(b => b.classList.toggle('on', b.dataset.v===v)); }
+// 연수원 검색 구분 — 연수원명·연수원코드 + 임직원 소속 기업명·기업코드
+const AT_SITE_SEARCH = [
+  {value:'siteName', label:'연수원명'},
+  {value:'siteCode', label:'연수원코드'},
+  {value:'corpName', label:'기업명'},
+  {value:'corpCode', label:'기업코드'}
+];
+function siteFieldOf(e, key){ return String(e[key] ?? ''); }   // 목록은 기간·과정유형 필터 없음(전체 기간 누적)
 const at = { tab:'person', form: atInit(), applied: atInit(), page:1, size:20 };   // 목록 (탭: person 개인별 / corp 기업별)
-const atd = { id:null, form: afInit(), applied: afInit(), page:1, size:20 }; // 상세
+const atd = { id:null, tab:'time', form: afInit(), applied: afInit(), page:1, size:20 }; // 상세
 
-// 훈련과정 ID — 가상 값(HRD-Net 훈련과정 ID 형식 가정). 연수원(계약) 단위로 부여된다고 가정, 미등록 연수원은 '-'
-function trainingIdOf(e){ return Number(e.siteCode) % 4 === 0 ? '-' : `AIG2026${String(Number(e.siteCode) * 7 % 1000000).padStart(10,'0')}`; }
+// 훈련과정 — 학습기간은 훈련과정 ID 단위로 정의(같은 훈련과정 ID = 같은 학습기간)
+// 학습기간 6개월: 시작일 ~ 시작일 + 6개월 - 1일. 시작일은 가상 값
+const TRAINING_COURSES = {
+  'ABA20267001095628': { start: new Date(2026, 6, 1) }   // 2026.07.01 ~ 2026.12.31
+};
+// 프로토타입: 전체 임직원이 동일 훈련과정 ID를 사용
+function trainingIdOf(e){ return 'ABA20267001095628'; }
+// 학습기간 ISO 범위 [시작일, 종료일] — 훈련과정 미등록 시 ['','']
+function trainingRangeOf(e){
+  const tc = TRAINING_COURSES[trainingIdOf(e)];
+  if(!tc) return ['',''];
+  const end = new Date(tc.start); end.setMonth(end.getMonth() + 6); end.setDate(end.getDate() - 1);
+  return [pdIso(tc.start), pdIso(end)];
+}
+function trainingPeriodOf(e){
+  const tc = TRAINING_COURSES[trainingIdOf(e)];
+  if(!tc) return '-';
+  const end = new Date(tc.start); end.setMonth(end.getMonth() + 6); end.setDate(end.getDate() - 1);
+  return `${fmt(tc.start)} ~ ${fmt(end)}`;
+}
 function archiveCalc(e, f){
   const ar = archiveOf(e);
-  const base = ar.list.filter(x => (!f.year || x.date.startsWith(f.year)) && (!f.month || x.date.slice(5,7) === f.month));
+  const from = (f.from||'').replace(/-/g,'.'), to = (f.to||'').replace(/-/g,'.');
+  const base = ar.list.filter(x => (!from || x.date >= from) && (!to || x.date <= to));
   const by = Object.fromEntries(ARCHIVE_CATS.map(c => [c, base.filter(x=>x.cat===c).reduce((a,x)=>a+x.sec,0)]));
   const total = Object.values(by).reduce((a,v)=>a+v,0);
   return { by, total, sumTotal: f.cat ? by[f.cat] : total, rows: f.cat ? base.filter(x=>x.cat===f.cat) : base };
 }
 const passCell = (f, total) => f.cat ? '-' : (total >= ARCHIVE_PASS_SEC ? 'Y' : 'N');   // 이수여부 Y/N, 색 구분 없음
+// 이수여부 라벨 — 근무상태와 같은 칩 형태(색 구분 없음). 판정 불가('-')는 텍스트
+const passChip = (f, total) => { const v = passCell(f, total); return v==='-' ? v : `<span class="chip">${v}</span>`; };
 const catCells = (f, by) => ARCHIVE_CATS.map(c=>`<td>${f.cat && f.cat!==c ? '-' : hms(by[c])}</td>`).join('');
 
-// 학습일(연·월) + 과정유형(라디오) 필터 HTML
-function periodTypeFilter(fm, prefix){
+// 과정유형(셀렉트) + 학습일(기간 선택) 필터 HTML
+// prefix는 화면 상태 객체명과 동일(atd) — 입력값을 form에 바로 반영
+function periodTypeFilter(fm, prefix, def){
   return `
-        <div class="field"><label>학습일</label><div class="inputs">
-          <select class="select" style="width:100px" id="${prefix}Year" onchange="const m=document.getElementById('${prefix}Month'); m.disabled=!this.value; if(!this.value) m.value='';">
-            <option value="">전체</option>${['2026','2025','2024'].map(y=>`<option value="${y}" ${fm.year===y?'selected':''}>${y}년</option>`).join('')}</select>
-          <select class="select" style="width:90px" id="${prefix}Month" ${fm.year?'':'disabled'}>
-            <option value="">전체</option>${Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0')).map(m=>`<option value="${m}" ${fm.month===m?'selected':''}>${Number(m)}월</option>`).join('')}</select>
-        </div></div>
         <div class="field"><label>과정유형</label><div class="inputs">
-          <div class="yn radio-row">${[['','전체'], ...ARCHIVE_CATS.map(c=>[c,c])].map(([v,l])=>`<label><input type="radio" name="${prefix}Cat" value="${v}" ${fm.cat===v?'checked':''}>${l}</label>`).join('')}</div></div></div>`;
+          <select class="select mid" id="${prefix}Cat" onchange="${prefix}.form.cat=this.value">${opt(ARCHIVE_CATS, fm.cat, '과정유형 전체')}</select>
+        </div></div>
+        <div class="field"><label>학습일</label><div class="inputs">
+          ${drpField(prefix+'Date', { from:fm.from, to:fm.to, def, onApply: prefix+'DateApply' })}
+        </div></div>`;
 }
 function readPeriodType(prefix){
-  const v = id => document.getElementById(id).value;
-  return { year:v(prefix+'Year'), month:v(prefix+'Year') ? v(prefix+'Month') : '', cat:(document.querySelector(`input[name="${prefix}Cat"]:checked`)||{}).value || '' };
+  const d = drp[prefix+'Date'];
+  return { from:d.from, to:d.to, cat:document.getElementById(prefix+'Cat').value };
 }
+
+/* =========================================================
+   기간 선택(Date Range Picker) — 공통 컴포넌트
+   - 좌측 빠른 선택(오늘 / 7일간 / 한 달 / 직접 선택) + 2개월 달력 + 시작일·종료일 직접 입력
+   - [적용] 시 필드에 반영, 영역 밖 클릭·ESC 시 변경 취소
+   - [초기화] 시 화면별 기본값(def)으로 복원
+   ========================================================= */
+const pdIso = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const isoDate = v => { const [y,m,d] = v.split('-').map(Number); return new Date(y, m-1, d); };
+const dotOf = v => v ? v.replace(/-/g,'.') : '';
+function today0(){ const t = new Date(); t.setHours(0,0,0,0); return t; }
+const DRP_PRESETS = [
+  {key:'today', label:'오늘',   range:()=>{ const t = today0(); return [t, t]; }},
+  {key:'week',  label:'7일간',  range:()=>{ const t = today0(), a = new Date(t); a.setDate(a.getDate()-6); return [a, t]; }},
+  {key:'month', label:'한 달',  range:()=>{ const t = today0(), a = new Date(t); a.setMonth(a.getMonth()-1); return [a, t]; }},
+  {key:'custom',label:'직접 선택'}
+];
+const DRP_ICON = '<svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>';
+const drp = {};
+
+function drpField(id, o){
+  const st = drp[id] = Object.assign(drp[id] || {}, o, {open:false});
+  return `<div class="drp" id="drp-${id}">
+    <button type="button" class="drp-input" onclick="drpToggle('${id}')"><span id="drpText-${id}">${drpText(st)}</span><i>${DRP_ICON}</i></button>
+    <div class="drp-pop" id="drpPop-${id}" hidden></div></div>`;
+}
+function drpText(st){ return st.from && st.to ? `${dotOf(st.from)} ~ ${dotOf(st.to)}` : '<em>기간을 선택해주세요.</em>'; }
+function drpToggle(id){ drp[id].open ? drpClose(id) : drpOpen(id); }
+// 달력 표시 월 — 종료일(오늘 이후면 오늘)이 오른쪽 달력에 오도록
+function drpViewFor(to){
+  const t = today0(), b = to ? isoDate(to) : t, base = b > t ? t : b;
+  return new Date(base.getFullYear(), base.getMonth()-1, 1);
+}
+function drpOpen(id){
+  Object.keys(drp).forEach(k => k!==id && drp[k].open && drpClose(k));
+  const st = drp[id];
+  Object.assign(st, { open:true, draft:{from:st.from, to:st.to}, view:drpViewFor(st.to), custom:false, restart:false });
+  document.getElementById('drpPop-'+id).hidden = false;
+  document.getElementById('drp-'+id).classList.add('open');
+  drpRender(id);
+}
+function drpClose(id){
+  const st = drp[id]; st.open = false;
+  const p = document.getElementById('drpPop-'+id); if(p){ p.hidden = true; p.innerHTML = ''; }
+  const w = document.getElementById('drp-'+id); if(w) w.classList.remove('open');
+}
+function drpPresetKey(st){
+  if(st.custom) return 'custom';
+  const {from, to} = st.draft;
+  const hit = DRP_PRESETS.find(p => p.range && (([a,b]) => from===pdIso(a) && to===pdIso(b))(p.range()));
+  return hit ? hit.key : 'custom';
+}
+function drpRender(id){
+  const st = drp[id], pk = drpPresetKey(st);
+  const months = [0,1].map(k => new Date(st.view.getFullYear(), st.view.getMonth()+k, 1));
+  document.getElementById('drpPop-'+id).innerHTML = `
+    <div class="drp-body">
+      <div class="drp-presets">${DRP_PRESETS.map(p=>`<button type="button" class="${pk===p.key?'on':''}" onclick="drpPreset('${id}','${p.key}')">${p.label}</button>`).join('')}</div>
+      ${months.map((m,k) => drpMonth(id, m, k)).join('')}
+    </div>
+    <div class="drp-foot">
+      <div class="drp-field"><label>시작일</label><input value="${dotOf(st.draft.from)}" placeholder="YYYY.MM.DD" maxlength="10" onchange="drpTyped('${id}','from',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>
+      <span class="drp-tilde">~</span>
+      <div class="drp-field"><label>종료일</label><input value="${dotOf(st.draft.to)}" placeholder="YYYY.MM.DD" maxlength="10" onchange="drpTyped('${id}','to',this.value)" onkeydown="if(event.key==='Enter')this.blur()"></div>
+      <div class="drp-btns">
+        <button type="button" class="btn btn-line" onclick="drpResetDraft('${id}')">초기화</button>
+        <button type="button" class="btn btn-primary" onclick="drpApply('${id}')">적용</button>
+      </div>
+    </div>`;
+}
+function drpMonth(id, m, k){
+  const st = drp[id], y = m.getFullYear(), mo = m.getMonth(), {from, to} = st.draft;
+  const start = new Date(y, mo, 1 - new Date(y, mo, 1).getDay());   // 일요일 시작, 6주 고정
+  const cells = Array.from({length:42}, (_,i) => new Date(start.getFullYear(), start.getMonth(), start.getDate()+i));
+  const ty = today0().getFullYear(), opts = [];
+  for(let yy=ty-3; yy<=ty+1; yy++) for(let mm=0; mm<12; mm++) opts.push(`<option value="${yy}-${mm}" ${yy===y && mm===mo ? 'selected' : ''}>${yy}년 ${mm+1}월</option>`);
+  const td = d => {
+    const iso = pdIso(d), out = d.getMonth() !== mo, cls = [out?'out':'', d.getDay()===0?'sun':''];
+    if(!out){
+      if(from && to && iso >= from && iso <= to) cls.push('in');
+      if(iso === from) cls.push('s');
+      if(iso === to) cls.push('e');
+    }
+    return `<td class="${cls.join(' ').trim()}">${out ? `<span>${d.getDate()}</span>` : `<button type="button" onclick="drpPick('${id}','${iso}')">${d.getDate()}</button>`}</td>`;
+  };
+  const rows = Array.from({length:6}, (_,r) => `<tr>${cells.slice(r*7, r*7+7).map(td).join('')}</tr>`).join('');
+  return `<div class="drp-cal">
+    <div class="drp-cal-head">
+      <select class="drp-month" onchange="drpSetView('${id}', this.value, ${k})">${opts.join('')}</select>
+      <div class="drp-nav"><button type="button" onclick="drpShift('${id}',-1)" aria-label="이전 달">‹</button><button type="button" onclick="drpShift('${id}',1)" aria-label="다음 달">›</button></div>
+    </div>
+    <table class="drp-grid"><thead><tr>${['일','월','화','수','목','금','토'].map((w,i)=>`<th class="${i===0?'sun':''}">${w}</th>`).join('')}</tr></thead><tbody>${rows}</tbody></table>
+  </div>`;
+}
+// 날짜 클릭 — 첫 클릭: 시작일 / 두 번째 클릭: 종료일(시작일보다 앞이면 서로 교체)
+function drpPick(id, iso){
+  const st = drp[id], dr = st.draft;
+  if(!dr.from || dr.to || st.restart){ dr.from = iso; dr.to = ''; st.restart = false; }
+  else if(iso < dr.from){ dr.to = dr.from; dr.from = iso; }
+  else dr.to = iso;
+  st.custom = !dr.to;
+  drpRender(id);
+}
+function drpPreset(id, key){
+  const st = drp[id];
+  if(key === 'custom'){ st.custom = true; st.restart = true; drpRender(id); return; }
+  const [a,b] = DRP_PRESETS.find(p=>p.key===key).range();
+  Object.assign(st, { draft:{from:pdIso(a), to:pdIso(b)}, custom:false, restart:false, view:drpViewFor(pdIso(b)) });
+  drpRender(id);
+}
+function drpShift(id, n){ const v = drp[id].view; drp[id].view = new Date(v.getFullYear(), v.getMonth()+n, 1); drpRender(id); }
+function drpSetView(id, val, k){ const [y,m] = val.split('-').map(Number); drp[id].view = new Date(y, m-k, 1); drpRender(id); }
+// 직접 입력 — YYYY.MM.DD 또는 숫자 8자리
+function drpTyped(id, key, v){
+  const st = drp[id], n = v.replace(/\D/g,'');
+  if(!n){ st.draft[key] = ''; drpRender(id); return; }
+  const d = n.length===8 ? new Date(+n.slice(0,4), +n.slice(4,6)-1, +n.slice(6,8)) : null;
+  if(!d || pdIso(d) !== `${n.slice(0,4)}-${n.slice(4,6)}-${n.slice(6,8)}`){ toast('날짜를 YYYY.MM.DD 형식으로 입력해주세요.'); drpRender(id); return; }
+  const next = {...st.draft, [key]: pdIso(d)};
+  if(next.from && next.to && next.from > next.to){ toast('종료일은 시작일 이후로 선택해주세요.'); drpRender(id); return; }
+  Object.assign(st, { draft:next, custom:false, restart:false, view: key==='to' ? drpViewFor(next.to) : new Date(d.getFullYear(), d.getMonth(), 1) });
+  drpRender(id);
+}
+function drpResetDraft(id){
+  const st = drp[id], [a,b] = st.def ? st.def() : ['',''];
+  Object.assign(st, { draft:{from:a, to:b}, custom:false, restart:false, view:drpViewFor(b) });
+  drpRender(id);
+}
+function drpApply(id){
+  const st = drp[id], dr = st.draft;
+  if(!dr.from){ toast('시작일을 선택해주세요.'); return; }
+  if(!dr.to) dr.to = dr.from;
+  st.from = dr.from; st.to = dr.to;
+  document.getElementById('drpText-'+id).innerHTML = drpText(st);
+  drpClose(id);
+  if(st.onApply && window[st.onApply]) window[st.onApply](st.from, st.to);
+}
+document.addEventListener('mousedown', e => Object.keys(drp).forEach(k => {
+  if(!drp[k].open) return;
+  const w = document.getElementById('drp-'+k);
+  if(!w || !w.contains(e.target)) drpClose(k);
+}));
+document.addEventListener('keydown', e => { if(e.key==='Escape') Object.keys(drp).forEach(k => drp[k].open && drpClose(k)); });
 
 // ── 목록
 function renderArchiveList(){
   const f = at.form;
-  const sites = [...new Set(EMPLOYEES.map(e=>e.siteName))];
   document.getElementById('page').innerHTML = `
     <div class="page-head">
       <h1>학습시간 조회</h1>
@@ -2125,11 +2351,20 @@ function renderArchiveList(){
         <button class="tab ${at.tab==='corp'?'on':''}" onclick="setAtTab('corp')">기업별 현황</button>
       </div>
       <div class="filter-box">
-        <div class="filter-row">
-          <div class="field"><label>연수원명</label><div class="inputs"><select class="select wide" id="atSite">${opt(sites, f.site, '전체 연수원')}</select></div></div>
+        <div class="filter-row nowrap">
+          <div class="field"><label>연수원 검색</label><div class="inputs">
+            <select class="select" style="width:100px" id="atSType">${AT_SITE_SEARCH.map(t=>`<option value="${t.value}" ${f.sType===t.value?'selected':''}>${t.label}</option>`).join('')}</select>
+            <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atSiteKw" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.siteKw)}"></div>
+          </div></div>
+          <div class="field"><label>근무상태</label><div class="inputs">
+            <div class="seg" id="atWork">${WORK_STATES.map(v=>`<button type="button" data-v="${v}" class="${f.work===v?'on':''}" onclick="atSetWork('${v}')">${v}</button>`).join('')}</div>
+          </div></div>
+          <div class="field"><label>훈련과정 ID</label><div class="inputs">
+            <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atTrainId" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.trainId)}"></div>
+          </div></div>
           <div class="field" style="display:${at.tab==='person'?'block':'none'}"><label>임직원 검색</label><div class="inputs">
-            <select class="select" style="width:90px" id="atKType"><option value="name" ${f.kType==='name'?'selected':''}>이름</option><option value="loginId" ${f.kType==='loginId'?'selected':''}>아이디</option></select>
-            <div class="search-input sm"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.keyword)}"></div>
+            <select class="select" style="width:80px" id="atKType"><option value="name" ${f.kType==='name'?'selected':''}>이름</option><option value="loginId" ${f.kType==='loginId'?'selected':''}>아이디</option></select>
+            <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atKeyword" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.keyword)}"></div>
           </div></div>
           <div class="btns">
             <button class="btn btn-primary" onclick="atSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
@@ -2142,9 +2377,9 @@ function renderArchiveList(){
         <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
       </div>
       <div class="table-wrap">
-        <table style="min-width:${at.tab==='person' ? 1100 : 1280}px;table-layout:fixed">
+        <table style="min-width:${at.tab==='person' ? 1380 : 1280}px;table-layout:fixed">
           <thead><tr>${at.tab==='person'
-            ? `<th style="width:50px">No.</th><th style="width:70px">이름</th><th style="width:160px">아이디</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:200px">연수원명</th><th style="width:170px">훈련과정 ID</th>
+            ? `<th style="width:50px">No.</th><th style="width:70px">이름</th><th style="width:160px">아이디</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:200px">연수원명</th><th style="width:90px">근무상태</th><th style="width:170px">훈련과정 ID</th><th style="width:190px">학습기간</th>
                <th style="width:240px">총 누적시간</th><th style="width:90px">이수여부</th>`
             : `<th style="width:50px">No.</th><th style="text-align:left;width:170px">연수원명</th><th style="text-align:left;width:150px">기업명</th><th style="width:70px">학습자 수</th>
                <th>총 누적시간</th>${ARCHIVE_CATS.map(c=>`<th>${c} 누적시간</th>`).join('')}<th style="width:64px">이수</th><th style="width:64px">미이수</th>`}</tr></thead>
@@ -2153,12 +2388,18 @@ function renderArchiveList(){
       </div>
       <div class="pagination" id="atPager"></div>
     </div>`;
-  document.getElementById('atKeyword').onkeydown = e => { if(e.key==='Enter') atSearch(); };
+  ['atSiteKw','atKeyword','atTrainId'].forEach(id => document.getElementById(id).onkeydown = e => { if(e.key==='Enter') atSearch(); });
   renderAtTable();
+}
+// 공통 조건(개인별·기업별 탭) — 연수원 검색(구분별 부분 일치), 근무상태, 훈련과정 ID(부분 일치)
+function atBaseMatch(e, f){
+  const t = (f.trainId||'').trim().toLowerCase();
+  const k = (f.siteKw||'').trim().toLowerCase();
+  return (!k || siteFieldOf(e, f.sType).toLowerCase().includes(k)) && (!f.work || workStateOf(e)===f.work) && (!t || trainingIdOf(e).toLowerCase().includes(t));
 }
 function atRows(){
   const f = at.applied, q = f.keyword.trim().toLowerCase();
-  return EMPLOYEES.filter(e => (!f.site || e.siteName===f.site) && (!q || String(e[f.kType]).toLowerCase().includes(q)))
+  return EMPLOYEES.filter(e => atBaseMatch(e, f) && (!q || String(e[f.kType]).toLowerCase().includes(q)))
     .map(e => ({ e, c: archiveCalc(e, f) }));
 }
 function renderAtTable(){
@@ -2171,9 +2412,9 @@ function renderAtTable(){
   document.getElementById('atBody').innerHTML = total ? slice.map(({e,c},i)=>`<tr>
       <td>${(at.page-1)*at.size + i + 1}</td>
       <td><button class="link" onclick="openArchiveDetail(${e.id})">${e.name}</button></td><td>${e.loginId}</td>
-      <td>${e.siteCode}</td><td style="text-align:left">${escapeHtml(e.siteName)}</td><td>${trainingIdOf(e)}</td>
-      <td>${hms(c.sumTotal)}</td><td>${passCell(f, c.total)}</td></tr>`).join('')
-    : `<tr class="empty"><td colspan="8">검색 결과가 없습니다.</td></tr>`;
+      <td>${e.siteCode}</td><td style="text-align:left">${escapeHtml(e.siteName)}</td><td>${workChip(e)}</td><td>${trainingIdOf(e)}</td><td>${trainingPeriodOf(e)}</td>
+      <td>${hms(c.sumTotal)}</td><td>${passChip(f, c.total)}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="10">검색 결과가 없습니다.</td></tr>`;
   document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
 }
 
@@ -2182,9 +2423,9 @@ function setAtTab(t){ at.tab = t; at.page = 1; if(t==='corp'){ at.form.keyword='
 function atCorpRows(){
   const f = at.applied;
   const groups = {};
-  EMPLOYEES.filter(e => !f.site || e.siteName===f.site).forEach(e => {
+  EMPLOYEES.filter(e => atBaseMatch(e, f)).forEach(e => {
     const c = archiveCalc(e, f);
-    const g = groups[e.siteCode] || (groups[e.siteCode] = { siteName:e.siteName, corpName:e.corpName, learners:0, by:Object.fromEntries(ARCHIVE_CATS.map(x=>[x,0])), sumTotal:0, pass:0, fail:0 });
+    const g = groups[e.siteCode] || (groups[e.siteCode] = { siteCode:e.siteCode, siteName:e.siteName, corpName:e.corpName, learners:0, by:Object.fromEntries(ARCHIVE_CATS.map(x=>[x,0])), sumTotal:0, pass:0, fail:0 });
     if(!c.rows.length) return;
     g.learners++; g.sumTotal += c.sumTotal;
     ARCHIVE_CATS.forEach(x => g.by[x] += c.by[x]);
@@ -2200,51 +2441,66 @@ function renderAtCorpTable(){
   document.getElementById('atCount').textContent = `검색결과 ${total.toLocaleString()}건`;
   document.getElementById('atBody').innerHTML = total ? slice.map((g,i)=>`<tr>
       <td>${(at.page-1)*at.size + i + 1}</td>
-      <td style="text-align:left"><button class="link" onclick="atDrillSite('${g.siteName.replace(/'/g,"\\'")}')">${escapeHtml(g.siteName)}</button></td>
+      <td style="text-align:left"><button class="link" onclick="atDrillSite('${g.siteCode}')">${escapeHtml(g.siteName)}</button></td>
       <td style="text-align:left">${escapeHtml(g.corpName)}</td><td>${g.learners}명</td>
       <td>${hms(g.sumTotal)}</td>${catCells(f, g.by)}
       <td>${f.cat ? '-' : g.pass+'명'}</td><td>${f.cat ? '-' : g.fail+'명'}</td></tr>`).join('')
     : `<tr class="empty"><td colspan="${6 + ARCHIVE_CATS.length}">검색 결과가 없습니다.</td></tr>`;
   document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
 }
-// 연수원명 클릭 → 개인별 현황 탭으로 전환(해당 연수원 + 현재 조건 유지)
-function atDrillSite(name){ at.tab = 'person'; at.form.site = name; at.applied.site = name; at.page = 1; renderArchiveList(); }
+// 연수원명 클릭 → 개인별 현황 탭(연수원코드로 조회, 그 외 조건 유지)
+function atDrillSite(code){ at.tab = 'person'; Object.assign(at.form, {sType:'siteCode', siteKw:code}); Object.assign(at.applied, {sType:'siteCode', siteKw:code}); at.page = 1; renderArchiveList(); }
 
 function atSearch(){
-  at.form = { ...afInit(), site: document.getElementById('atSite').value, kType: document.getElementById('atKType').value, keyword: document.getElementById('atKeyword').value };
+  at.form = { ...afInit(), work: at.form.work, sType: document.getElementById('atSType').value, siteKw: document.getElementById('atSiteKw').value, trainId: document.getElementById('atTrainId').value, kType: document.getElementById('atKType').value, keyword: document.getElementById('atKeyword').value };
   at.applied = {...at.form}; at.page = 1; renderArchiveList();
 }
 function atReset(){ at.form = atInit(); at.applied = atInit(); at.page = 1; renderArchiveList(); }
 function atMovePage(n){ at.page = n; renderAtTable(); }
 
-// ── 상세 (이름 클릭) — 목록의 학습일·과정유형 조건을 이어받음
+// ── 상세 (이름 클릭) — 탭: 학습시간 정보 / 학습 이력
 function openArchiveDetail(id){
-  atd.id = id; atd.form = afInit(); atd.applied = afInit(); atd.page = 1;
+  atd.id = id; atd.tab = 'time'; atd.form = atdDefault(); atd.applied = atdDefault(); atd.page = 1;
   currentPage='archive-time-detail'; openGroup='archive'; renderLnb(); renderPage();
 }
+function setAtdTab(t){ atd.tab = t; atd.page = 1; renderArchiveDetail(); }
 function renderArchiveDetail(){
   const e = EMPLOYEES[atd.id-1], f = atd.applied;
-  const all = archiveCalc(e, afInit());   // 상단 요약: 전체 기간·전체 과정유형 기준(검색 조건 미적용)
-  const c = archiveCalc(e, f);            // 하단 목록: 검색 조건 적용
-  const pages = Math.max(1, Math.ceil(c.rows.length/atd.size));
-  const slice = c.rows.slice((atd.page-1)*atd.size, atd.page*atd.size);
-  document.getElementById('page').innerHTML = `
-    <div class="page-head">
-      <h1>학습시간 상세 <span class="title-sub">${e.name} · ${e.loginId} · ${escapeHtml(e.siteName)}</span></h1>
-      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 학습시간 조회 <span>›</span> <b>학습시간 상세</b></div>
-    </div>
-    <div class="card">
-      <div class="table-wrap">
-        <table class="summary-table archive-sum">
-          <thead><tr><th>총 누적시간</th>${ARCHIVE_CATS.map(x=>`<th>${x} 누적시간</th>`).join('')}<th>이수여부</th></tr></thead>
-          <tbody><tr><td>${hms(all.total)}</td>${ARCHIVE_CATS.map(x=>`<td>${hms(all.by[x])}</td>`).join('')}<td>${passCell(afInit(), all.total)}</td></tr></tbody>
-        </table>
-      </div>
+  const tab = atd.tab || 'time';
+  const row = (k,v) => `<tr><th>${k}</th><td>${v}</td></tr>`;
 
-      <h3 class="sub-title">아카이브 학습 이력</h3>
+  const all = archiveCalc(e, afInit());   // 전체 기간·전체 과정유형 기준(검색 조건 없음)
+
+  // 기본정보 — 탭 공통(탭 위 고정). 4열(항목 | 값 | 항목 | 값)
+  const row2 = (k1,v1,k2,v2) => `<tr><th>${k1}</th><td>${v1}</td><th>${k2}</th><td>${v2}</td></tr>`;
+  const basicInfo = `
+      <h3 class="sub-title">기본정보</h3>
+      <table class="kv-table kv-2col">
+        ${row2('이름', e.name, '아이디', e.loginId)}
+        ${row2('연수원코드', e.siteCode, '연수원명', escapeHtml(e.siteName))}
+        ${row2('기업코드', e.corpCode, '기업명', escapeHtml(e.corpName))}
+        ${row2('훈련과정 ID', trainingIdOf(e), '학습기간', trainingPeriodOf(e))}
+        ${row2('근무상태', workChip(e), '이수여부', passChip(afInit(), all.total))}
+      </table>`;
+
+  // 학습시간 탭
+  const timeTab = `
+      <h3 class="sub-title">누적 학습시간</h3>
+      <table class="kv-table">
+        ${row('총 누적시간', hms(all.total))}
+        ${ARCHIVE_CATS.map(x => row(`${x} 누적시간`, hms(all.by[x]))).join('')}
+      </table>`;
+
+  // 상세 학습이력 탭 — 검색 조건(과정유형, 학습일 기간) 적용. 총 누적시간 = 검색결과 아카이브 인정시간 합계
+  const c = archiveCalc(e, f);
+  const pages = Math.max(1, Math.ceil(c.rows.length/atd.size));
+  // 정렬: 학습일 최신순(같은 날짜는 생성 순서 유지). No.는 검색결과 기준 역순 번호
+  const sorted = [...c.rows].sort((a,b) => b.date.localeCompare(a.date));
+  const slice = sorted.slice((atd.page-1)*atd.size, atd.page*atd.size);
+  const historyTab = `
       <div class="filter-box">
         <div class="filter-row">
-          ${periodTypeFilter(atd.form, 'atd')}
+          ${periodTypeFilter(atd.form, 'atd', () => trainingRangeOf(e))}
           <div class="btns">
             <button class="btn btn-primary" onclick="atdSearch()"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>검색</button>
             <button class="btn btn-line" onclick="atdReset()"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>초기화</button>
@@ -2252,24 +2508,45 @@ function renderArchiveDetail(){
         </div>
       </div>
       <div class="table-head">
-        <div class="count">검색결과 ${c.rows.length.toLocaleString()}건</div>
+        <div class="count">검색결과 ${c.rows.length.toLocaleString()}건 · 총 누적시간 ${hmsText(c.sumTotal)}</div>
         <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
       </div>
       <div class="table-wrap">
         <table style="min-width:1200px">
-          <thead><tr><th style="width:56px">No.</th><th style="width:100px">과정유형</th><th>과정명</th><th style="width:100px">과정 학습시간</th><th style="width:200px">실 재생시간</th><th style="width:200px">아카이브 인정시간</th><th style="width:110px">학습일</th><th style="width:110px">수료처리일</th></tr></thead>
+          <thead><tr><th style="width:56px">No.</th><th style="width:110px">학습일</th><th style="width:100px">과정유형</th><th>과정명</th><th style="width:100px">과정 학습시간</th><th style="width:200px">실 재생시간</th><th style="width:200px">아카이브 인정시간</th><th style="width:110px">수료처리일</th></tr></thead>
           <tbody>
-            ${c.rows.length ? slice.map(x=>`<tr><td>${x.no}</td><td>${x.cat}</td><td>${escapeHtml(x.title)}</td><td>${x.studyH}시간</td><td>${x.dur===null ? '-' : hms(x.dur)}</td><td>${hms(x.sec)}</td><td>${x.date}</td><td>${x.doneDate}</td></tr>`).join('')
+            ${c.rows.length ? slice.map((x,i)=>`<tr><td>${sorted.length - ((atd.page-1)*atd.size + i)}</td><td>${x.date}</td><td>${x.cat}</td><td>${escapeHtml(x.title)}</td><td>${x.studyH}시간</td><td>${x.dur===null ? '-' : hms(x.dur)}</td><td>${hms(x.sec)}</td><td>${x.doneDate}</td></tr>`).join('')
             : `<tr class="empty"><td colspan="8">검색 결과가 없습니다.</td></tr>`}
           </tbody>
         </table>
       </div>
-      ${c.rows.length ? `<div class="pagination">${pagerHtml(atd.page, pages, 'atdMovePage')}</div>` : ''}
+      ${c.rows.length ? `<div class="pagination">${pagerHtml(atd.page, pages, 'atdMovePage')}</div>` : ''}`;
+
+  document.getElementById('page').innerHTML = `
+    <div class="page-head">
+      <h1>개인별 현황 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 학습시간 조회 <span>›</span> <b>개인별 현황 상세</b></div>
+    </div>
+    <div class="card">
+      ${basicInfo}
+      <div class="detail-divider" style="margin:28px 0 24px"></div>
+      <div class="tabs">
+        <button class="tab ${tab==='time'?'on':''}" onclick="setAtdTab('time')">학습시간</button>
+        <button class="tab ${tab==='history'?'on':''}" onclick="setAtdTab('history')">상세 학습이력</button>
+      </div>
+      ${tab==='time' ? timeTab : historyTab}
       <div class="back-foot"><button class="btn btn-line" onclick="go('archive-time','archive')"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button></div>
     </div>`;
 }
-function atdSearch(){ atd.form = readPeriodType('atd'); atd.applied = {...atd.form}; atd.page = 1; renderArchiveDetail(); }
-function atdReset(){ atd.form = afInit(); atd.applied = afInit(); atd.page = 1; renderArchiveDetail(); }
+function atdSearch(){
+  const f = readPeriodType('atd');
+  if(f.from && f.to && f.from > f.to){ toast('종료일은 시작일 이후로 선택해주세요.'); return; }
+  atd.form = f; atd.applied = {...f}; atd.page = 1; renderArchiveDetail();
+}
+function atdReset(){ atd.form = atdDefault(); atd.applied = atdDefault(); atd.page = 1; renderArchiveDetail(); }
+// 학습이력 검색 기본값 — 학습일: 해당 임직원의 훈련과정 학습기간 / 과정유형: 전체
+function atdDefault(){ const [from, to] = trainingRangeOf(EMPLOYEES[atd.id-1]); return { from, to, cat:'' }; }
+function atdDateApply(from, to){ atd.form.from = from; atd.form.to = to; }
 function atdMovePage(n){ atd.page = n; renderArchiveDetail(); }
 
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
@@ -2283,7 +2560,7 @@ const PAGE_GROUP = {
   'cprod-list':'cprod','cprod-detail':'cprod','pcorp-list':'pcorp','pcorp-detail':'pcorp',
   'emp-list':'emp','emp-detail':'emp','learn-course':'learn','learn-course-detail':'learn',
   'client-list':'client','client-detail':'client','site-list':'site','site-manage':'site',
-  'archive-time':'archive','archive-time-detail':'archive','file-download':null
+  'archive-time':'archive','archive-time-detail':'archive','archive-login':'archive','archive-remind':'archive','archive-stats':'archive','file-download':null
 };
 let routing = false;
 function stateToHash(){
@@ -2296,14 +2573,14 @@ function stateToHash(){
     case 'client-detail': return `client-detail/${clDetailKind}/${clDetail.no}`;
     case 'site-manage': return `site-manage/${sm.no}`;
     case 'archive-time': return `archive-time/${at.tab}`;
-    case 'archive-time-detail': return `archive-time-detail/${atd.id}`;
+    case 'archive-time-detail': return `archive-time-detail/${atd.id}/${atd.tab}`;
     default: return currentPage;
   }
 }
 function syncHash(){
   if(routing) return;
   const h = '#' + stateToHash();
-  if(location.hash !== h) history.pushState(null, '', h);
+  if(location.hash !== h){ try{ history.pushState(null, '', h); }catch(e){ /* 미리보기(샌드박스)에서는 주소 변경 불가 — 무시 */ } }
 }
 function routeFromHash(){
   const [page, a, b] = decodeURIComponent(location.hash.slice(1)).split('/');
@@ -2318,7 +2595,7 @@ function routeFromHash(){
       case 'client-detail': openClientDetail(a, +b); break;
       case 'site-manage': openSiteManage(+a); break;
       case 'archive-time': go('archive-time','archive'); if(a) setAtTab(a); break;
-      case 'archive-time-detail': openArchiveDetail(+a); break;
+      case 'archive-time-detail': openArchiveDetail(+a); if(b) setAtdTab(b); break;
       default:
         if(page in PAGE_GROUP) go(page, PAGE_GROUP[page]);
         else { renderLnb(); renderPage(); }
@@ -2330,14 +2607,14 @@ function routeFromHash(){
 let clDetailKind = 'customer';
 const _openClientDetail = openClientDetail;
 openClientDetail = function(tab, no){ clDetailKind = tab; _openClientDetail(tab, no); };
-['renderPage','setProdTab','setEmpTab','setClientTab','setAtTab','atDrillSite'].forEach(fn => {
+['renderPage','setProdTab','setEmpTab','setClientTab','setAtTab','atDrillSite','setAtdTab'].forEach(fn => {
   const orig = window[fn];
   window[fn] = function(...args){ const r = orig.apply(this, args); syncHash(); return r; };
 });
 window.addEventListener('popstate', routeFromHash);
 
 if(location.hash.length > 1) routeFromHash();
-else { routing = true; renderLnb(); renderPage(); routing = false; history.replaceState(null, '', '#' + stateToHash()); }
+else { routing = true; renderLnb(); renderPage(); routing = false; try{ history.replaceState(null, '', '#' + stateToHash()); }catch(e){ /* 미리보기(샌드박스)에서는 주소 변경 불가 — 무시 */ } }
 </script>
 </body>
 </html>
