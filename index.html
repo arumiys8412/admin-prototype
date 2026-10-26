@@ -2149,7 +2149,7 @@ function saveSiteManage(){
 const afInit = () => ({ from:'', to:'', cat:'' });   // 학습일 기간(YYYY-MM-DD) + 과정유형
 const atInit = () => ({ ...afInit(), sType:'siteName', siteKw:'', work:'재직', trainId:'', kType:'name', keyword:'' });
 // 근무상태 — 3.0 임직원 정보 값 사용. 조회 대상: 재직 / 모니터링 (퇴사자는 개인정보 삭제 대상으로 제외)
-const WORK_STATES = [['','전체'],['재직','재직'],['모니터링','모니터링']];   // 검색: 전체 / 재직 / 모니터링 (디폴트 재직)
+const WORK_STATES = [['','근무상태 전체'],['재직','재직'],['모니터링','모니터링']];   // 검색: 근무상태 전체 / 재직 / 모니터링 (디폴트 재직)
 function workStateOf(e){ return e.status; }
 const workChip = e => `<span class="chip ${workStateOf(e)==='재직'?'':'off'}">${workStateOf(e)}</span>`;
 function atSetWork(v){ at.form.work = v; document.querySelectorAll('#atWork button').forEach(b => b.classList.toggle('on', b.dataset.v===v)); }
@@ -2447,7 +2447,8 @@ function renderAtTable(){
    - 학습자 수 = 근무상태 '재직' 아카이브 대상자 수. 모니터링 계정·퇴사자 제외
    - 1인당 평균 누적시간 = 총 누적시간 ÷ 학습자 수 (초 단위 절사), 시간 표기 기준(괄호 초 환산) 동일 적용
    - 이수 인원수 = 누적시간 15시간 이상 인원
-   - 이수율 = 이수 인원수 ÷ 학습자 수 × 100 (소수점 첫째 자리 반올림, 100%는 정수 표기)
+   - 이수율 = 이수 인원수 ÷ 학습자 수 × 100 (소수점 첫째 자리까지 표기, 정수는 소수점 없이 표기)
+   - 단위: 인원 '명', 금액 '원' ('-'는 단위 없음)
    - 총 교육비 = 학습자 수 × 1인 교육비 / 정부지원금(예상) = 이수 인원수 × 1인 교육비 × 지원 비율
      · 1인 교육비 140,000원 고정 / 지원 비율: 사업장규모 우선지원 90%, 중견 80%
      · 대기업 또는 사업장규모 없음: 정부지원금(예상) '-' */
@@ -2477,7 +2478,8 @@ function corpStats(list){
   return s;
 }
 const rateText = s => Number.isInteger(s.rate) ? `${s.rate}%` : `${s.rate.toFixed(1)}%`;
-const won = n => n === null ? '-' : n.toLocaleString();
+const won = n => n === null ? '-' : `${n.toLocaleString()}원`;
+const ppl = n => `${n.toLocaleString()}명`;
 function atCorpRows(){
   const f = at.applied, groups = {};
   EMPLOYEES.filter(e => atBaseMatch({...e, status: workStateOf(e)}, {...f, work:'재직'})).forEach(e => {
@@ -2485,8 +2487,8 @@ function atCorpRows(){
     groups[k] = groups[k] || { key:k, e };
   });
   return Object.values(groups).map(g => ({ ...g, s: corpStats(corpTargets(g.key)) }))
-    // 기업명 가나다순, 같은 기업은 학습기간 시작일 최신순
-    .sort((a,b) => a.e.corpName.localeCompare(b.e.corpName, 'ko') || trainingRangeOf(b.e)[0].localeCompare(trainingRangeOf(a.e)[0]));
+    // 정렬: 기업명 가나다순 → 연수원명 가나다순 → 학습기간 시작일 최신순
+    .sort((a,b) => a.e.corpName.localeCompare(b.e.corpName, 'ko') || a.e.siteName.localeCompare(b.e.siteName, 'ko') || trainingRangeOf(b.e)[0].localeCompare(trainingRangeOf(a.e)[0]));
 }
 function renderAtCorpTable(){
   const rows = atCorpRows(), total = rows.length;
@@ -2500,7 +2502,7 @@ function renderAtCorpTable(){
       <td>${e.corpCode}</td><td style="text-align:left"><button class="link" onclick="openCorpDetail('${key}')">${escapeHtml(e.corpName)}</button></td>
       <td>${e.siteCode}</td><td style="text-align:left">${escapeHtml(e.siteName)}</td>
       <td>${trainingIdOf(e)}</td><td>${trainingPeriodOf(e)}</td>
-      <td>${s.learners}</td><td>${hms(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td>
+      <td>${ppl(s.learners)}</td><td>${hms(s.avg)}</td><td>${ppl(s.pass)}</td><td>${rateText(s)}</td>
       <td style="text-align:right">${won(s.fee)}</td><td style="text-align:right">${won(s.support)}</td></tr>`).join('')
     : `<tr class="empty"><td colspan="13">검색 결과가 없습니다.</td></tr>`;
   document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
@@ -2542,7 +2544,7 @@ function renderCorpDetail(){
       <div class="table-wrap">
         <table class="summary-table archive-sum">
           <thead><tr><th>학습자 수</th><th>1인당 평균 누적시간</th><th>이수 인원수</th><th>이수율</th><th>총 교육비</th><th>정부지원금(예상)</th></tr></thead>
-          <tbody><tr><td>${s.learners}</td><td>${hms(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td><td>${won(s.fee)}</td><td>${won(s.support)}</td></tr></tbody>
+          <tbody><tr><td>${ppl(s.learners)}</td><td>${hms(s.avg)}</td><td>${ppl(s.pass)}</td><td>${rateText(s)}</td><td>${won(s.fee)}</td><td>${won(s.support)}</td></tr></tbody>
         </table>
       </div>`;
   // 임직원별 학습시간 — 임직원 검색, 이수여부 필터
@@ -2550,7 +2552,8 @@ function renderCorpDetail(){
   const rows = list.map(e => { const c = archiveCalc(e, afInit()); return { e, c, last: c.rows.reduce((m,x)=> x.date > m ? x.date : m, '') }; })
     .filter(({e,c}) => (!q || String(e[f.kType]).toLowerCase().includes(q))
       && (!f.pass || (f.pass==='이수') === (c.total >= ARCHIVE_PASS_SEC)))
-    .sort((a,b) => b.last.localeCompare(a.last));
+    // 정렬: 최근 학습일 최신순 → 이름 가나다순 → 아이디 오름차순. 학습 이력이 없는 행은 하단
+    .sort((a,b) => b.last.localeCompare(a.last) || a.e.name.localeCompare(b.e.name, 'ko') || a.e.loginId.localeCompare(b.e.loginId));
   const pages = Math.max(1, Math.ceil(rows.length/acd.size));
   if(acd.page > pages) acd.page = pages;
   const slice = rows.slice((acd.page-1)*acd.size, acd.page*acd.size);
