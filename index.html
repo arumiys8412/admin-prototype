@@ -231,6 +231,8 @@
   .inline{display:flex;align-items:center;gap:8px}
   .suffix{font-size:12px;color:var(--text-sub)}
   .hint{font-size:10.5px;color:var(--text-mute);margin-top:6px}
+  .archive-note{margin:4px 0 10px;font-size:13px;color:var(--text-mute)}
+  .btn:disabled{opacity:.45;cursor:not-allowed}
   .corp-pick{display:grid;grid-template-columns:1fr 300px;gap:14px}
   .corp-list{max-height:320px;overflow:auto;min-height:120px}
   .corp-list thead th{position:sticky;top:0}
@@ -1221,8 +1223,9 @@ const ARCHIVE_SUBJECTS = [
   {code:'63102', name:'AI로 완성하는 프로젝트 관리 스킬1', dur:1603, cat:'마이크로러닝'},
   {code:'52790', name:'[SSS급 인재] 실리콘밸리식 협업 스킬, 애자일 커뮤니케이션', dur:14197, cat:'온라인'},
   {code:'70412', name:'3분 경제 브리핑', dur:180, cat:'마이크로러닝'},
-  {code:'70419', name:'보고서 한 장 요약법', dur:240, cat:'마이크로러닝'}
-  // 라이브: 신규 라이브 모듈 기획 전으로 이력 데이터 없음(이력구분·누적시간 컬럼만 유지)
+  {code:'70419', name:'보고서 한 장 요약법', dur:240, cat:'마이크로러닝'},
+  // 라이브: 콘텐츠시간 = 방송시간(방송 시작 ~ 방송 종료). 수료처리 없음
+  {code:'80125', name:'[라이브] 2026 HR 트렌드 세미나', dur:7200, cat:'라이브'}
 ];
 // 과정별 콘텐츠 — 온라인: 과정 콘텐츠시간을 3개 콘텐츠로 분할 / 마이크로러닝: 콘텐츠 1개(콘텐츠명 = 과정명). dur = 콘텐츠시간(초)
 ARCHIVE_SUBJECTS.forEach(sj => {
@@ -1237,16 +1240,17 @@ function archiveOf(e){
     const sj = subs[(e.id + k*3) % subs.length];
     const ct = sj.contents[(e.id + k) % sj.contents.length];   // 이력 1건 = 학습일 × 콘텐츠
     const d = new Date(2026, 9, 14); d.setDate(d.getDate() - k*2 - (e.id % 3));
-    let sec;
-    if(sj.cat==='라이브') sec = Math.min(sj.dur, 1800 * (2 + k % 3));          // 라이브: 시청기록(입장~퇴장, 방송시간까지)
-    else if(k % 7 === 0) sec = 0;                                               // 인정시간 0초 케이스(캡처 1행)
-    else sec = Math.min(ct.dur, Math.floor(ct.dur * (0.55 + ((e.id*13 + k*17) % 50) / 100)));   // 콘텐츠시간 대비 55~104% 학습(상한 적용)
+    // raw = 학습시간(해당 학습일 콘텐츠 학습 구간 합계) / sec = 아카이브 인정시간(콘텐츠 상한 적용)
+    let sec, raw;
+    if(sj.cat==='라이브'){ raw = Math.min(sj.dur, 1800 * (2 + k % 3)); sec = raw; }   // 라이브: 입장~퇴장(방송 종료까지), 실시간 시청만
+    else if(k % 7 === 0){ raw = Math.round(ct.dur * 0.3); sec = 0; }                 // 콘텐츠시간 초과 학습 — 인정시간 0초
+    else { raw = Math.floor(ct.dur * (0.55 + ((e.id*13 + k*17) % 50) / 100)); sec = Math.min(ct.dur, raw); }   // 콘텐츠시간 대비 55~104% 학습(상한 적용)
     // 수료처리일 — 수료처리전이면 '-'. 수료 시 학습일 당일~3일 이내(가상, 오늘 이후 불가)
     const done = sj.cat !== '라이브' && sec > 0 && (k % 3 !== 1);   // 라이브는 수료처리 없음
     const dd = new Date(d); dd.setDate(dd.getDate() + (sj.cat==='라이브' ? 0 : k % 4));
     const doneDate = !done ? '-' : (dd > new Date(2026, 9, 19) ? fmt(d) : fmt(dd));
     const endAt = `${pad2(9 + (e.id + k*5) % 13)}:${pad2((k*17) % 60)}:00`;   // 학습 종료 시각(같은 학습일 정렬 기준)
-    return { code:sj.code, title:sj.name, content:ct.name, cat:sj.cat, dur:ct.dur, sec, date: fmt(d), endAt, doneDate };
+    return { code:sj.code, title:sj.name, content:ct.name, cat:sj.cat, dur:ct.dur, raw, sec, date: fmt(d), endAt, doneDate };
   });
   const by = Object.fromEntries(ARCHIVE_CATS.map(c => [c, list.filter(x=>x.cat===c).reduce((a,x)=>a+x.sec,0)]));
   return { list: list.map((x,i)=>({...x, no: list.length - i})), by, total: Object.values(by).reduce((a,v)=>a+v,0) };
@@ -2145,7 +2149,7 @@ function saveSiteManage(){
 const afInit = () => ({ from:'', to:'', cat:'' });   // 학습일 기간(YYYY-MM-DD) + 과정유형
 const atInit = () => ({ ...afInit(), sType:'siteName', siteKw:'', work:'재직', trainId:'', kType:'name', keyword:'' });
 // 근무상태 — 3.0 임직원 정보 값 사용. 조회 대상: 재직 / 모니터링 (퇴사자는 개인정보 삭제 대상으로 제외)
-const WORK_STATES = ['재직','모니터링'];
+const WORK_STATES = [['','전체'],['재직','재직'],['모니터링','모니터링']];   // 검색: 전체 / 재직 / 모니터링 (디폴트 재직)
 function workStateOf(e){ return e.status; }
 const workChip = e => `<span class="chip ${workStateOf(e)==='재직'?'':'off'}">${workStateOf(e)}</span>`;
 function atSetWork(v){ at.form.work = v; document.querySelectorAll('#atWork button').forEach(b => b.classList.toggle('on', b.dataset.v===v)); }
@@ -2375,7 +2379,7 @@ function renderArchiveList(){
             <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atSiteKw" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.siteKw)}"></div>
           </div></div>
           ${at.tab==='person' ? `<div class="field"><label>근무상태</label><div class="inputs">
-            <div class="seg" id="atWork">${WORK_STATES.map(v=>`<button type="button" data-v="${v}" class="${f.work===v?'on':''}" onclick="atSetWork('${v}')">${v}</button>`).join('')}</div>
+            <div class="seg" id="atWork">${WORK_STATES.map(([v,l])=>`<button type="button" data-v="${v}" class="${f.work===v?'on':''}" onclick="atSetWork('${v}')">${l}</button>`).join('')}</div>
           </div></div>` : ''}
           <div class="field"><label>훈련과정 ID</label><div class="inputs">
             <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atTrainId" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.trainId)}"></div>
@@ -2392,15 +2396,15 @@ function renderArchiveList(){
       </div>
       <div class="table-head">
         <div class="count" id="atCount"></div>
-        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+        <button class="btn btn-line" id="atExcel" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
       </div>
       <div class="table-wrap">
-        <table style="min-width:${at.tab==='person'?1530:1590}px;table-layout:fixed">
+        <table style="min-width:${at.tab==='person'?1530:1434}px;table-layout:fixed">
           <thead><tr>${at.tab==='person'
             ? `<th style="width:50px">No.</th><th style="width:70px">이름</th><th style="width:160px">아이디</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:200px">연수원명</th><th style="width:80px">기업코드</th><th style="text-align:left;width:160px">기업명</th><th style="width:170px">훈련과정 ID</th><th style="width:190px">학습기간</th>
                <th style="width:240px">총 누적시간</th><th style="width:90px">이수여부</th>`
-            : `<th style="width:50px">No.</th><th style="width:80px">기업코드</th><th style="text-align:left;width:150px">기업명</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:170px">연수원명</th><th style="width:170px">훈련과정 ID</th><th style="width:190px">학습기간</th>
-               <th style="width:80px">학습자 수</th><th style="width:170px">1인당 평균 학습시간</th><th style="width:110px">기준 통과 인원수</th><th style="width:80px">이수율</th><th style="width:120px">총 교육비</th><th style="width:130px">정부지원금(예상)</th>`}</tr></thead>
+            : `<th style="width:50px">No.</th><th style="width:70px">기업코드</th><th style="text-align:left;width:140px">기업명</th><th style="width:80px">연수원코드</th><th style="text-align:left;width:160px">연수원명</th><th style="width:150px">훈련과정 ID</th><th style="width:170px">학습기간</th>
+               <th style="width:70px">학습자 수</th><th style="width:190px">1인당 평균 누적시간</th><th style="width:80px">이수 인원수</th><th style="width:64px">이수율</th><th style="width:100px">총 교육비</th><th style="width:110px">정부지원금(예상)</th>`}</tr></thead>
           <tbody id="atBody"></tbody>
         </table>
       </div>
@@ -2419,8 +2423,8 @@ function atRows(){
   const f = at.applied, q = f.keyword.trim().toLowerCase();
   return EMPLOYEES.filter(e => atBaseMatch(e, f) && (!q || String(e[f.kType]).toLowerCase().includes(q)))
     .map(e => { const c = archiveCalc(e, f); return { e, c, last: c.rows.reduce((m,x)=> x.date > m ? x.date : m, '') }; })
-    // 최근 학습일순. 학습 이력이 없는 회원은 하단
-    .sort((a,b) => b.last.localeCompare(a.last));
+    // 정렬: 최근 학습일 최신순 → 이름 가나다순 → 아이디 오름차순. 학습 이력이 없는 행은 하단
+    .sort((a,b) => b.last.localeCompare(a.last) || a.e.name.localeCompare(b.e.name, 'ko') || a.e.loginId.localeCompare(b.e.loginId));
 }
 function renderAtTable(){
   const f = at.applied, rows = atRows(), total = rows.length;
@@ -2428,6 +2432,7 @@ function renderAtTable(){
   if(at.page > pages) at.page = pages;
   const slice = rows.slice((at.page-1)*at.size, at.page*at.size);
   document.getElementById('atCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('atExcel').disabled = !total;   // 검색 결과 0건이면 엑셀 다운로드 비활성
   document.getElementById('atBody').innerHTML = total ? slice.map(({e,c},i)=>`<tr>
       <td>${(at.page-1)*at.size + i + 1}</td>
       <td><button class="link" onclick="openArchiveDetail(${e.id})">${maskName(e.name)}</button></td><td>${maskId(e.loginId)}</td>
@@ -2438,20 +2443,23 @@ function renderAtTable(){
 }
 
 /* ── 기업별 학습시간 탭
-   - 1행 = 기업 × 훈련과정 ID
+   - 1행 = 기업 × 연수원 × 훈련과정 ID
    - 학습자 수 = 근무상태 '재직' 아카이브 대상자 수. 모니터링 계정·퇴사자 제외
-   - 1인당 평균 학습시간 = 총 누적시간 ÷ 학습자 수 (초 단위 절사)
-   - 기준 통과 인원수 = 누적시간 15시간 이상 인원
-   - 이수율 = 기준 통과 인원수 ÷ 학습자 수 × 100 (소수점 첫째 자리 반올림, 100%는 정수 표기)
-   - 총 교육비 = 학습자 수 × 1인 교육비 / 정부지원금(예상) = 기준 통과 인원수 × 1인 교육비 × 지원 비율
+   - 1인당 평균 누적시간 = 총 누적시간 ÷ 학습자 수 (초 단위 절사), 시간 표기 기준(괄호 초 환산) 동일 적용
+   - 이수 인원수 = 누적시간 15시간 이상 인원
+   - 이수율 = 이수 인원수 ÷ 학습자 수 × 100 (소수점 첫째 자리 반올림, 100%는 정수 표기)
+   - 총 교육비 = 학습자 수 × 1인 교육비 / 정부지원금(예상) = 이수 인원수 × 1인 교육비 × 지원 비율
      · 1인 교육비 140,000원 고정 / 지원 비율: 사업장규모 우선지원 90%, 중견 80%
      · 대기업 또는 사업장규모 없음: 정부지원금(예상) '-' */
 function setAtTab(t){ at.tab = t==='corp' ? 'corp' : 'person'; at.page = 1; renderArchiveList(); }
-const corpKey = e => `${e.corpCode}|${trainingIdOf(e)}`;
+// 1행 = 기업 × 연수원 × 훈련과정 ID (기업이 연수원 2곳 이상이면 연수원별로 행 분리)
+const corpKey = e => `${e.corpCode}|${e.siteCode}|${trainingIdOf(e)}`;
 const ARCHIVE_FEE = 140000;   // 1인 교육비 고정값
 // 사업장규모 — 거래처 정보(원천: 맞춤형 LMS 기업기본정보). 프로토타입은 기업코드 기준 가상 값
 const BIZ_SIZES = ['우선지원','중견','대기업','-'];
 const bizSizeOf = e => BIZ_SIZES[[0,0,1,0,2,1,3][+e.corpCode % 7]];
+// 비용수급사업장번호 — 거래처 정보(원천: 맞춤형 LMS 기업기본정보). 원천 값 그대로, 없으면 '-'. 프로토타입은 가상 값
+const costSiteNoOf = e => (+e.corpCode % 5 === 3) ? '-' : String(10000000000 + (+e.corpCode * 7919) % 90000000000).slice(0,11);
 // 지원 비율 — 우선지원 90%, 중견 80%. 대기업·사업장규모 없음은 산정 제외(null)
 const SUPPORT_RATE = { '우선지원':0.9, '중견':0.8 };
 const supportRateOf = e => SUPPORT_RATE[bizSizeOf(e)] ?? null;
@@ -2486,12 +2494,13 @@ function renderAtCorpTable(){
   if(at.page > pages) at.page = pages;
   const slice = rows.slice((at.page-1)*at.size, at.page*at.size);
   document.getElementById('atCount').textContent = `검색결과 ${total.toLocaleString()}건`;
+  document.getElementById('atExcel').disabled = !total;   // 검색 결과 0건이면 엑셀 다운로드 비활성
   document.getElementById('atBody').innerHTML = total ? slice.map(({key,e,s},i)=>`<tr>
       <td>${(at.page-1)*at.size + i + 1}</td>
       <td>${e.corpCode}</td><td style="text-align:left"><button class="link" onclick="openCorpDetail('${key}')">${escapeHtml(e.corpName)}</button></td>
       <td>${e.siteCode}</td><td style="text-align:left">${escapeHtml(e.siteName)}</td>
       <td>${trainingIdOf(e)}</td><td>${trainingPeriodOf(e)}</td>
-      <td>${s.learners}</td><td>${hmsText(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td>
+      <td>${s.learners}</td><td>${hms(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td>
       <td style="text-align:right">${won(s.fee)}</td><td style="text-align:right">${won(s.support)}</td></tr>`).join('')
     : `<tr class="empty"><td colspan="13">검색 결과가 없습니다.</td></tr>`;
   document.getElementById('atPager').innerHTML = pagerHtml(at.page, pages, 'atMovePage');
@@ -2524,16 +2533,16 @@ function renderCorpDetail(){
       <h3 class="sub-title">기본정보</h3>
       <table class="kv-table kv-2col">
         ${row2('기업코드', e0.corpCode, '기업명', escapeHtml(e0.corpName))}
+        ${row2('사업장규모', bizSizeOf(e0), '비용수급사업장번호', costSiteNoOf(e0))}
         ${row2('연수원코드', e0.siteCode, '연수원명', escapeHtml(e0.siteName))}
-        ${row2('사업장규모', bizSizeOf(e0), '', '')}
         ${row2('훈련과정 ID', trainingIdOf(e0), '학습기간', trainingPeriodOf(e0))}
       </table>`;
   const status = `
       <h3 class="sub-title">학습 현황</h3>
       <div class="table-wrap">
         <table class="summary-table archive-sum">
-          <thead><tr><th>학습자 수</th><th>1인당 평균 학습시간</th><th>기준 통과 인원수</th><th>이수율</th><th>총 교육비</th><th>정부지원금(예상)</th></tr></thead>
-          <tbody><tr><td>${s.learners}</td><td>${hmsText(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td><td>${won(s.fee)}</td><td>${won(s.support)}</td></tr></tbody>
+          <thead><tr><th>학습자 수</th><th>1인당 평균 누적시간</th><th>이수 인원수</th><th>이수율</th><th>총 교육비</th><th>정부지원금(예상)</th></tr></thead>
+          <tbody><tr><td>${s.learners}</td><td>${hms(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td><td>${won(s.fee)}</td><td>${won(s.support)}</td></tr></tbody>
         </table>
       </div>`;
   // 임직원별 학습시간 — 임직원 검색, 이수여부 필터
@@ -2564,17 +2573,17 @@ function renderCorpDetail(){
       </div>
       <div class="table-head">
         <div class="count">검색결과 ${rows.length.toLocaleString()}건</div>
-        <button class="btn btn-line" onclick="downloadExcel()"><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
+        <button class="btn btn-line" onclick="downloadExcel()" ${rows.length?'':'disabled'}><svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>엑셀 다운로드</button>
       </div>
       <div class="table-wrap">
-        <table style="min-width:1400px;table-layout:fixed">
-          <thead><tr><th style="width:50px">No.</th><th style="width:80px">이름</th><th style="width:170px">아이디</th><th style="width:90px">사번</th><th style="width:110px">최근 학습일</th>
+        <table style="min-width:1310px;table-layout:fixed">
+          <thead><tr><th style="width:50px">No.</th><th style="width:80px">이름</th><th style="width:170px">아이디</th><th style="width:110px">최근 학습일</th>
             <th style="width:220px">총 누적시간</th>${ARCHIVE_CATS.map(x=>`<th style="width:200px">${x} 누적시간</th>`).join('')}<th style="width:90px">이수여부</th></tr></thead>
           <tbody>
             ${rows.length ? slice.map(({e,c,last},i)=>`<tr><td>${(acd.page-1)*acd.size + i + 1}</td>
-              <td><button class="link" onclick="openArchiveDetail(${e.id})">${maskName(e.name)}</button></td><td>${maskId(e.loginId)}</td><td>${e.empNo}</td><td>${last || '-'}</td>
+              <td><button class="link" onclick="openArchiveDetail(${e.id})">${maskName(e.name)}</button></td><td>${maskId(e.loginId)}</td><td>${last || '-'}</td>
               <td>${hms(c.total)}</td>${ARCHIVE_CATS.map(x=>`<td>${hms(c.by[x])}</td>`).join('')}<td>${passChip(afInit(), c.total)}</td></tr>`).join('')
-            : `<tr class="empty"><td colspan="${7 + ARCHIVE_CATS.length - 1}">검색 결과가 없습니다.</td></tr>`}
+            : `<tr class="empty"><td colspan="${5 + ARCHIVE_CATS.length}">검색 결과가 없습니다.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2633,6 +2642,9 @@ function renderArchiveDetail(){
 
   // 상세 학습이력 — 검색 조건(이력구분, 학습일 기간, 과정 검색) 적용
   const c = archiveCalc(e, f);
+  // 학습기간 내 이력만 노출
+  const [ps0, pe0] = trainingRangeOf(e).map(v => v.replace(/-/g,'.'));
+  c.rows = c.rows.filter(x => (!ps0 || x.date >= ps0) && (!pe0 || x.date <= pe0));
   // 과정 검색(과정명·과정아이디 부분 일치) — 목록 집계와 무관, 상세 학습이력에만 적용
   const ck = (f.cKw||'').trim().toLowerCase();
   if(ck) c.rows = c.rows.filter(x => String(x[f.cType]).toLowerCase().includes(ck));
@@ -2655,15 +2667,16 @@ function renderArchiveDetail(){
           </div>
         </div>
       </div>
+      <p class="archive-note">※ 아카이브 인정시간은 콘텐츠시간까지만 인정되며, 하루 학습시간 합계가 8시간을 초과한 부분은 인정되지 않습니다.</p>
       <div class="table-head">
         <div class="count">검색결과 ${c.rows.length.toLocaleString()}건</div>
       </div>
       <div class="table-wrap">
-        <table style="min-width:1400px">
-          <thead><tr><th style="width:56px">No.</th><th style="width:110px">학습일</th><th style="width:100px">이력구분</th><th>과정명</th><th style="width:100px">과정아이디</th><th style="width:220px">콘텐츠명</th><th style="width:200px">콘텐츠시간</th><th style="width:200px">아카이브 인정시간</th><th style="width:110px">수료처리일</th></tr></thead>
+        <table style="min-width:1600px">
+          <thead><tr><th style="width:56px">No.</th><th style="width:110px">학습일</th><th style="width:100px">이력구분</th><th>과정명</th><th style="width:100px">과정아이디</th><th style="width:220px">콘텐츠명</th><th style="width:160px">콘텐츠시간</th><th style="width:200px">학습시간</th><th style="width:200px">아카이브 인정시간</th><th style="width:110px">수료처리일</th></tr></thead>
           <tbody>
-            ${c.rows.length ? slice.map((x,i)=>`<tr><td>${sorted.length - ((atd.page-1)*atd.size + i)}</td><td>${x.date}</td><td>${x.cat}</td><td>${escapeHtml(x.title)}</td><td>${x.code}</td><td>${escapeHtml(x.content)}</td><td>${hmsText(x.dur)}</td><td>${hms(x.sec)}</td><td>${x.doneDate}</td></tr>`).join('')
-            : `<tr class="empty"><td colspan="9">검색 결과가 없습니다.</td></tr>`}
+            ${c.rows.length ? slice.map((x,i)=>`<tr><td>${sorted.length - ((atd.page-1)*atd.size + i)}</td><td>${x.date}</td><td>${x.cat}</td><td>${escapeHtml(x.title)}</td><td>${x.code}</td><td>${escapeHtml(x.content)}</td><td>${hmsText(x.dur)}</td><td>${hms(x.raw)}</td><td>${hms(x.sec)}</td><td>${x.doneDate}</td></tr>`).join('')
+            : `<tr class="empty"><td colspan="10">검색 결과가 없습니다.</td></tr>`}
           </tbody>
         </table>
       </div>
@@ -2684,6 +2697,9 @@ function renderArchiveDetail(){
 function atdSearch(){
   const f = { ...readPeriodType('atd'), cType: document.getElementById('atdCType').value, cKw: document.getElementById('atdCKw').value };
   if(f.from && f.to && f.from > f.to){ toast('종료일은 시작일 이후로 선택해주세요.'); return; }
+  // 학습일은 해당 학습자의 학습기간 내로 제한 — 범위 밖이면 안내 후 조회 불가
+  const [ps, pe] = trainingRangeOf(EMPLOYEES[atd.id-1]);
+  if((f.from && ps && f.from < ps) || (f.to && pe && f.to > pe)){ toast(`학습기간(${trainingPeriodOf(EMPLOYEES[atd.id-1])}) 내에서 선택해주세요.`); return; }
   atd.form = f; atd.applied = {...f}; atd.page = 1; renderArchiveDetail();
 }
 function atdReset(){ atd.form = atdDefault(); atd.applied = atdDefault(); atd.page = 1; renderArchiveDetail(); }
@@ -2718,7 +2734,7 @@ function stateToHash(){
     case 'site-manage': return `site-manage/${sm.no}`;
     case 'archive-time': return `archive-time/${at.tab}`;
     case 'archive-time-detail': return `archive-time-detail/${atd.id}`;
-    case 'archive-time-corp-detail': return `archive-time-corp-detail/${acd.key.replace('|','/')}`;
+    case 'archive-time-corp-detail': return `archive-time-corp-detail/${acd.key.split('|').join('/')}`;
     default: return currentPage;
   }
 }
@@ -2728,7 +2744,7 @@ function syncHash(){
   if(location.hash !== h){ try{ history.pushState(null, '', h); }catch(e){ /* 미리보기(샌드박스)에서는 주소 변경 불가 — 무시 */ } }
 }
 function routeFromHash(){
-  const [page, a, b] = decodeURIComponent(location.hash.slice(1)).split('/');
+  const [page, a, b, c] = decodeURIComponent(location.hash.slice(1)).split('/');
   routing = true;
   try{
     switch(page){
@@ -2741,7 +2757,7 @@ function routeFromHash(){
       case 'site-manage': openSiteManage(+a); break;
       case 'archive-time': go('archive-time','archive'); if(a) setAtTab(a); break;
       case 'archive-time-detail': openArchiveDetail(+a); break;
-      case 'archive-time-corp-detail': openCorpDetail(`${a}|${b}`); break;
+      case 'archive-time-corp-detail': openCorpDetail(`${a}|${b}|${c}`); break;
       default:
         if(page in PAGE_GROUP) go(page, PAGE_GROUP[page]);
         else { renderLnb(); renderPage(); }
