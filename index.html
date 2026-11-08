@@ -458,8 +458,8 @@ const MENUS = [
   {id:'addon', label:'부가서비스',      icon:'plus'}
 ];
 
-let openGroup = 'cprod';
-let currentPage = 'cprod-list';
+let openGroup = 'archive';   // 첫 화면: 아카이브 현황 > 학습시간 조회
+let currentPage = 'archive-time';
 
 function renderLnb(){
   const chev = '<svg class="chev" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3"/></svg>';
@@ -1214,8 +1214,9 @@ function openEmpDetail(id){ edetail.id = id; edetail.tab = 'info'; currentPage='
 function setEmpTab(t){ edetail.tab = t; edetail.page = 1; renderEmpDetail(); }
 // 아카이브 현황 — 가상 데이터(초 단위). 1행 = 과목 × 학습 날짜
 // 누적시간 = 아카이브 인정시간 합계(목록과 항상 일치). 상위 과목명은 캡처 기준
-// 이력구분 — 과정 / 라이브. 과정은 '아카이브' 계약구분 카테고리(대분류·중분류)로 구분, 라이브는 분류 없음
+// 이력구분 — 과정 / 라이브. 과정은 'HRD아카이브' 계약구분 카테고리(대분류·중분류)로 구분, 라이브는 분류 없음
 const ARCHIVE_CATS = ['과정','라이브'];
+const ARCHIVE_DAY_CAP = 8 * 3600;   // 1일 상한 8시간(28,800초)
 const ARCHIVE_PASS_SEC = 15 * 3600;   // 이수 기준: 학습기간 내 총 누적시간 15시간 이상(FLOOR(초/3600) ≥ 15와 동일)
 const ARCHIVE_SUBJECTS = [
   {code:'41208', name:'공감 스위치 ON! 관계를 바꾸는 말 습관', dur:13036, cat:'과정', cat1:'직무공통', cat2:'온라인'},
@@ -1254,12 +1255,35 @@ function archiveOf(e){
     const dd = new Date(d); dd.setDate(dd.getDate() + (sj.cat==='라이브' ? 0 : k % 4));
     const doneDate = !done ? '-' : (dd > new Date(2026, 9, 19) ? fmt(d) : fmt(dd));
     const endAt = `${pad2(9 + (e.id + k*5) % 13)}:${pad2((k*17) % 60)}:00`;   // 학습 종료 시각(같은 학습일 정렬 기준)
-    // 학습시간(인정 기준 적용 전) — 인정 0초 케이스·콘텐츠 상한 도달 시 학습시간이 인정학습시간보다 큼
+    // 학습시간(인정 기준 적용 전) — 인정 0초 케이스·콘텐츠 상한 도달 시 학습시간이 인정시간보다 큼
     const raw = sj.cat==='라이브' ? sec : (sec === 0 ? Math.floor(ct.dur*0.3) + 60 : (sec >= ct.dur ? sec + 300 : sec));
     return { code:sj.code, title:sj.name, content:ct.name, cat:sj.cat, cat1:sj.cat1||'-', cat2:sj.cat2||'-', dur:ct.dur, sec, raw, date: fmt(d), endAt, doneDate };
   });
+  // 1일 상한 예시 — 일부 학습자에 하루 10시간 이상 학습한 날 추가(정책서 3-3 예시 2와 같은 구조)
+  // 과정 A·A'를 먼저 7시간 46분 학습 → 과정 B 첫 콘텐츠는 남은 13분 21초만 인정, 다음 콘텐츠는 0초
+  if(n && isDailyCapSample(e)){
+    const d = trainingIdOf(e) === 'ABA20261001084217' ? new Date(2026, 5, 15) : new Date(2026, 9, 15);
+    const plan = [['52790',0,'09:50:00'],['52790',1,'11:20:00'],['52790',2,'13:10:00'],['52317',0,'14:00:00'],['52317',1,'15:40:00'],['52317',2,'17:10:00'],['41208',0,'18:00:00'],['41208',1,'19:40:00']];
+    plan.forEach(([code, ci, endAt]) => {
+      const sj = ARCHIVE_SUBJECTS.find(s => s.code === code), ct = sj.contents[ci];
+      list.push({ code, title:sj.name, content:ct.name, cat:sj.cat, cat1:sj.cat1, cat2:sj.cat2, dur:ct.dur, sec:ct.dur, raw:ct.dur, date: fmt(d), endAt, doneDate:'-' });
+    });
+  }
+  // 1일 상한 8시간(28,800초) — 같은 학습일 안에서 학습한 순서(종료 시각 오름차순)대로 인정. 콘텐츠 상한 적용 후 1일 상한 적용
+  const dayAcc = {};
+  [...list].sort((a,b) => a.date.localeCompare(b.date) || a.endAt.localeCompare(b.endAt)).forEach(x => {
+    const used = dayAcc[x.date] || 0, ok = Math.max(0, Math.min(x.sec, ARCHIVE_DAY_CAP - used));
+    x.dayCapped = ok < x.sec; x.sec = ok; dayAcc[x.date] = used + ok;
+  });
+  list.sort((a,b) => b.date.localeCompare(a.date) || b.endAt.localeCompare(a.endAt));
   const by = Object.fromEntries(ARCHIVE_CATS.map(c => [c, list.filter(x=>x.cat===c).reduce((a,x)=>a+x.sec,0)]));
   return { list: list.map((x,i)=>({...x, no: list.length - i})), by, total: Object.values(by).reduce((a,v)=>a+v,0) };
+}
+// 1일 상한 예시 대상 — 학습시간 조회에 노출되는 학습자 중 앞쪽 3명(id 기준)
+let DAILY_CAP_IDS = null;
+function isDailyCapSample(e){
+  if(!DAILY_CAP_IDS) DAILY_CAP_IDS = new Set(EMPLOYEES.filter(x => archiveVisible(x) && x.id % 13 !== 5).slice(0, 3).map(x => x.id));
+  return DAILY_CAP_IDS.has(e.id);
 }
 // 시간 표기 — 'H시간 M분 S초(N초)', 60초 미만은 'N초'
 function hms(sec){
@@ -2173,9 +2197,11 @@ const atd = { id:null, form: {...afInit(), cType:'title', cKw:''}, applied: {...
 // 훈련과정 — 학습기간은 훈련과정 ID 단위로 정의(같은 훈련과정 ID = 같은 학습기간)
 // 학습기간 6개월: 시작일 ~ 시작일 + 6개월 - 1일. 시작일은 가상 값
 const TRAINING_COURSES = {
-  'ABA20267001095628': { start: new Date(2026, 6, 1) },   // 2026.07.01 ~ 2026.12.31
-  'ABA20261001084217': { start: new Date(2026, 0, 1) }    // 2026.01.01 ~ 2026.06.30
+  'ABA20267001095628': { start: new Date(2026, 6, 1), round: 2 },   // 2026.07.01 ~ 2026.12.31
+  'ABA20261001084217': { start: new Date(2026, 0, 1), round: 1 }    // 2026.01.01 ~ 2026.06.30
 };
+// 회차 — 훈련과정 ID의 회차(계약관리 기준). 미등록 시 '-'
+function trainingRoundOf(e){ const tc = TRAINING_COURSES[trainingIdOf(e)]; return tc && tc.round ? `${tc.round}회차` : '-'; }
 // 프로토타입: 기업코드 기준으로 훈련과정 ID 배정(기업코드 3의 배수 → 상반기 과정). 한 기업은 훈련과정 ID 1개
 function trainingIdOf(e){ return (+e.corpCode % 3 === 0) ? 'ABA20261001084217' : 'ABA20267001095628'; }
 // 학습기간 ISO 범위 [시작일, 종료일] — 훈련과정 미등록 시 ['','']
@@ -2410,9 +2436,9 @@ function renderArchiveList(){
         <table style="min-width:${at.tab==='person'?1530:1434}px;table-layout:fixed">
           <thead><tr>${at.tab==='person'
             ? `<th style="width:50px">No.</th><th style="width:70px">이름</th><th style="width:160px">아이디</th><th style="width:90px">연수원코드</th><th style="text-align:left;width:200px">연수원명</th><th style="width:80px">기업코드</th><th style="text-align:left;width:160px">기업명</th><th style="width:170px">훈련과정 ID</th><th style="width:190px">학습기간</th>
-               <th style="width:240px">누적 인정학습시간</th><th style="width:90px">이수여부</th>`
+               <th style="width:240px">누적 인정시간</th><th style="width:90px">이수여부</th>`
             : `<th style="width:50px">No.</th><th style="width:70px">기업코드</th><th style="text-align:left;width:140px">기업명</th><th style="width:80px">연수원코드</th><th style="text-align:left;width:160px">연수원명</th><th style="width:150px">훈련과정 ID</th><th style="width:170px">학습기간</th>
-               <th style="width:80px">훈련생 수</th><th style="width:190px">1인당 평균 누적 인정학습시간</th><th style="width:80px">이수 인원수</th><th style="width:64px">이수율</th><th style="width:100px">총 교육비</th><th style="width:110px">정부지원금(예상)</th>`}</tr></thead>
+               <th style="width:80px">대상자 수</th><th style="width:190px">1인당 평균 누적 인정시간</th><th style="width:80px">이수 인원수</th><th style="width:64px">이수율</th><th style="width:100px">총 교육비</th><th style="width:110px">정부지원금(예상)</th>`}</tr></thead>
           <tbody id="atBody"></tbody>
         </table>
       </div>
@@ -2452,11 +2478,11 @@ function renderAtTable(){
 
 /* ── 기업별 학습시간 탭
    - 1행 = 기업 × 연수원 × 훈련과정 ID
-   - 훈련생 수 = 근무상태 '재직' 아카이브 대상자 수. 퇴사자·모니터링 계정 제외
-   - 1인당 평균 누적 인정학습시간 = 누적 인정학습시간 ÷ 훈련생 수 (초 단위 절사), 시간 표기 기준(괄호 초 환산) 동일 적용
-   - 이수 인원수 = 훈련생 중 인정학습시간 15시간 이상 인원
-   - 이수율 = 이수 인원수 ÷ 훈련생 수 × 100 (소수점 둘째 자리 반올림, 정수는 소수점 없이 표기)
-   - 총 교육비 = 훈련생 수 × 1인 교육비 / 정부지원금(예상) = 이수 인원수 × 1인 교육비 × 지원 비율
+   - 대상자 수 = 집계 단위의 아카이브 대상자 수('모니터링' 계정·퇴사자 제외). 학습 이력이 없는 회원 포함
+   - 1인당 평균 누적 인정시간 = 누적 인정시간 ÷ 대상자 수 (초 단위 절사), 시간 표기 기준(괄호 초 환산) 동일 적용
+   - 이수 인원수 = 대상자 중 인정시간 15시간 이상 인원
+   - 이수율 = 이수 인원수 ÷ 대상자 수 × 100 (소수점 둘째 자리 반올림, 정수는 소수점 없이 표기)
+   - 총 교육비 = 대상자 수 × 1인 교육비 / 정부지원금(예상) = 이수 인원수 × 1인 교육비 × 지원 비율
      · 1인 교육비 140,000원 고정 / 지원 비율: 사업장규모 우선지원 90%, 중견 80%
      · 대기업 또는 사업장규모 없음: 정부지원금(예상) '-' */
 function setAtTab(t){ at.tab = t==='corp' ? 'corp' : 'person'; at.page = 1; renderArchiveList(); }
@@ -2484,7 +2510,7 @@ function corpStats(list){
   s.support = r === null ? null : Math.round(s.pass * ARCHIVE_FEE * r);
   return s;
 }
-const rateText = s => Number.isInteger(s.rate) ? `${s.rate}%` : `${s.rate.toFixed(1)}%`;
+const rateText = s => Number.isInteger(s.rate) ? `${s.rate}%` : `${s.rate.toFixed(1)}%`;   // 소수점 첫째 자리까지, 정수는 소수점 없이
 const won = n => n === null ? '-' : n.toLocaleString();
 function atCorpRows(){
   const f = at.applied, groups = {};
@@ -2542,13 +2568,14 @@ function renderCorpDetail(){
         ${row2('기업코드', e0.corpCode, '기업명', escapeHtml(e0.corpName))}
         ${row2('사업장규모', bizSizeOf(e0), '비용수급사업장번호', costSiteNoOf(e0))}
         ${row2('연수원코드', e0.siteCode, '연수원명', escapeHtml(e0.siteName))}
-        ${row2('훈련과정 ID', trainingIdOf(e0), '학습기간', trainingPeriodOf(e0))}
+        ${row2('훈련과정 ID', trainingIdOf(e0), '회차', trainingRoundOf(e0))}
+        <tr><th>학습기간</th><td colspan="3">${trainingPeriodOf(e0)}</td></tr>
       </table>`;
   const status = `
       <h3 class="sub-title">학습 현황</h3>
       <div class="table-wrap">
         <table class="summary-table archive-sum">
-          <thead><tr><th>훈련생 수</th><th>1인당 평균 누적 인정학습시간</th><th>이수 인원수</th><th>이수율</th><th>총 교육비</th><th>정부지원금(예상)</th></tr></thead>
+          <thead><tr><th>대상자 수</th><th>1인당 평균 누적 인정시간</th><th>이수 인원수</th><th>이수율</th><th>총 교육비</th><th>정부지원금(예상)</th></tr></thead>
           <tbody><tr><td>${s.learners}</td><td>${hms(s.avg)}</td><td>${s.pass}</td><td>${rateText(s)}</td><td>${won(s.fee)}</td><td>${won(s.support)}</td></tr></tbody>
         </table>
       </div>`;
@@ -2585,10 +2612,10 @@ function renderCorpDetail(){
       <div class="table-wrap">
         <table style="min-width:1310px;table-layout:fixed">
           <thead><tr><th style="width:50px">No.</th><th style="width:80px">이름</th><th style="width:170px">아이디</th><th style="width:110px">최근 학습일</th>
-            <th style="width:220px">누적 인정학습시간</th>${ARCHIVE_CATS.map(x=>`<th style="width:200px">${x} 인정학습시간</th>`).join('')}<th style="width:90px">이수여부</th></tr></thead>
+            <th style="width:220px">전체 누적 인정시간</th>${ARCHIVE_CATS.map(x=>`<th style="width:200px">${x} 누적 인정시간</th>`).join('')}<th style="width:90px">이수여부</th></tr></thead>
           <tbody>
             ${rows.length ? slice.map(({e,c,last},i)=>`<tr><td>${(acd.page-1)*acd.size + i + 1}</td>
-              <td><button class="link" onclick="openArchiveDetail(${e.id})">${maskName(e.name)}</button></td><td>${maskId(e.loginId)}</td><td>${last || '-'}</td>
+              <td>${maskName(e.name)}</td><td>${maskId(e.loginId)}</td><td>${last || '-'}</td>
               <td>${hms(c.total)}</td>${ARCHIVE_CATS.map(x=>`<td>${hms(c.by[x])}</td>`).join('')}<td>${passChip(afInit(), c.total)}</td></tr>`).join('')
             : `<tr class="empty"><td colspan="${5 + ARCHIVE_CATS.length}">검색 결과가 없습니다.</td></tr>`}
           </tbody>
@@ -2633,16 +2660,16 @@ function renderArchiveDetail(){
         ${row2('이름', e.name, '아이디', e.loginId)}
         ${row2('연수원코드', e.siteCode, '연수원명', escapeHtml(e.siteName))}
         ${row2('기업코드', e.corpCode, '기업명', escapeHtml(e.corpName))}
-        ${row2('훈련과정 ID', trainingIdOf(e), '학습기간', trainingPeriodOf(e))}
-        <tr><th>이수여부</th><td colspan="3">${passChip(afInit(), all.total)}</td></tr>
+        ${row2('훈련과정 ID', trainingIdOf(e), '회차', trainingRoundOf(e))}
+        ${row2('학습기간', trainingPeriodOf(e), '이수여부', passChip(afInit(), all.total))}
       </table>`;
 
   // 누적 학습시간 — 가로형 요약. 학습기간 내 전체 이력 기준(하단 검색 조건과 무관)
   const timeSummary = `
-      <h3 class="sub-title">누적 인정학습시간</h3>
+      <h3 class="sub-title">누적 인정시간</h3>
       <div class="table-wrap">
         <table class="summary-table archive-sum">
-          <thead><tr><th>누적 인정학습시간</th>${ARCHIVE_CATS.map(x=>`<th>${x} 인정학습시간</th>`).join('')}</tr></thead>
+          <thead><tr><th>전체 누적 인정시간</th>${ARCHIVE_CATS.map(x=>`<th>${x} 누적 인정시간</th>`).join('')}</tr></thead>
           <tbody><tr><td>${hms(all.total)}</td>${ARCHIVE_CATS.map(x=>`<td>${hms(all.by[x])}</td>`).join('')}</tr></tbody>
         </table>
       </div>`;
@@ -2679,8 +2706,8 @@ function renderArchiveDetail(){
             <div class="search-input xs"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="atdKw" type="text" placeholder="라이브명을 입력해주세요." value="${escapeHtml(fm.kw)}" onkeydown="if(event.key==='Enter')atdSearch()"></div>
           </div></div>`;
   const head = isC
-    ? `<th style="width:56px">No.</th><th style="width:110px">학습일</th><th>과정명</th><th style="width:100px">대분류</th><th style="width:110px">중분류</th><th style="width:100px">과정아이디</th><th style="width:170px">콘텐츠명</th><th style="width:120px">콘텐츠시간</th><th style="width:170px">학습시간</th><th style="width:170px">인정학습시간</th>`
-    : `<th style="width:56px">No.</th><th style="width:110px">학습일</th><th>라이브명</th><th style="width:150px">방송시간</th><th style="width:190px">학습시간</th><th style="width:190px">인정학습시간</th>`;
+    ? `<th style="width:56px">No.</th><th style="width:110px">학습일</th><th>과정명</th><th style="width:100px">대분류</th><th style="width:110px">중분류</th><th style="width:100px">과정아이디</th><th style="width:170px">콘텐츠명</th><th style="width:120px">콘텐츠시간</th><th style="width:170px">학습시간</th><th style="width:170px">인정시간</th>`
+    : `<th style="width:56px">No.</th><th style="width:110px">학습일</th><th>라이브명</th><th style="width:150px">방송시간</th><th style="width:190px">학습시간</th><th style="width:190px">인정시간</th>`;
   const body = rows.length ? slice.map((x,i) => isC
       ? `<tr><td>${no(i)}</td><td>${x.date}</td><td style="text-align:left">${escapeHtml(x.title)}</td><td>${x.cat1}</td><td>${x.cat2}</td><td>${x.code}</td><td style="text-align:left">${escapeHtml(x.content)}</td><td>${hmsText(x.dur)}</td><td>${hms(x.raw)}</td><td>${hms(x.sec)}</td></tr>`
       : `<tr><td>${no(i)}</td><td>${x.date}</td><td style="text-align:left">${escapeHtml(x.title)}</td><td>${hmsText(x.dur)}</td><td>${hms(x.raw)}</td><td>${hms(x.sec)}</td></tr>`).join('')
@@ -2702,7 +2729,7 @@ function renderArchiveDetail(){
       </div>
       <div class="table-head">
         <div class="count">검색결과 ${rows.length.toLocaleString()}건</div>
-        <div style="font-size:12px;color:var(--text-sub)">※ 인정학습시간은 콘텐츠시간까지만 인정되며, 하루 학습시간 합계가 8시간을 초과한 부분은 인정되지 않습니다.</div>
+        <div style="font-size:12px;color:var(--text-sub)">※ 인정시간은 콘텐츠시간까지만 인정되며, 하루 인정시간 합계가 8시간을 초과한 부분은 인정되지 않습니다.</div>
       </div>
       <div class="table-wrap">
         <table style="min-width:${isC ? 1340 : 1000}px">
