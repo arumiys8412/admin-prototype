@@ -119,6 +119,8 @@
   .section-title::before{content:'· '}
   .detail-table{min-width:1000px}
   .btn-sm{height:26px;padding:0 10px;font-size:11px;border-radius:5px}
+  .btn.btn-off,.btn.btn-off:hover{background:#e5e7eb;border:1px solid #e5e7eb;color:#9ca3af;cursor:not-allowed}
+  .btn.btn-off svg{stroke:#9ca3af}
   .detail-table th.l,.detail-table td.l{text-align:left}
   .detail-table th.r,.detail-table td.r{text-align:right;padding-right:28px}
   .detail-foot{display:flex;justify-content:flex-end;margin-top:20px}
@@ -394,13 +396,34 @@
       <h2 id="excelModalTitle">파일 생성 요청 완료</h2>
       <button class="modal-close" onclick="closeExcelModal()" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" id="excelModalBody">
       엑셀 파일 생성이 시작되었습니다.<br>
       생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.
     </div>
     <div class="modal-foot">
       <button class="btn btn-line" onclick="closeExcelModal()">목록에 머물기</button>
       <button class="btn btn-primary" onclick="goFileDownload()">파일 다운로드로 이동</button>
+    </div>
+  </div>
+</div>
+
+<!-- 결과보고서 다운로드 레이어 팝업 (아카이브 현황 > 결과보고서 > 결과보고서 상세) -->
+<div class="dim" id="reportModal" onclick="if(event.target===this)closeReportModal()">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
+    <div class="modal-head" style="margin-bottom:20px">
+      <h2 id="reportModalTitle">결과보고서 다운로드</h2>
+      <button class="modal-close" onclick="closeReportModal()" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="reportModalCount" style="font-weight:700;margin-bottom:12px"></div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:8px">출력 형태</div>
+      <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:6px"><input type="checkbox" name="reportType" value="summary" checked onchange="reportTypeChange()" style="accent-color:#374151">요약 보고서</label>
+      <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:12px"><input type="checkbox" name="reportType" value="detail" onchange="reportTypeChange()" style="accent-color:#374151">상세 데이터 (xlsx)</label>
+      <p style="margin:0;font-size:11px;color:var(--text-sub)">※ 선택한 출력 형태의 파일만 생성됩니다.<br><span id="reportModalZip">※ 파일이 2개 이상이면 압축 파일 1개로 생성됩니다.<br></span></p>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-line" onclick="closeReportModal()">취소</button>
+      <button class="btn btn-primary" id="reportModalOk" onclick="submitReport()">다운로드</button>
     </div>
   </div>
 </div>
@@ -452,7 +475,7 @@ const MENUS = [
     children:[{id:'pcorp-list', label:'상품별 기업관리 목록'}]},
   {id:'cate',  label:'카테고리 관리',   icon:'layer'},
   {id:'archive', label:'아카이브 현황', icon:'layer',
-    children:[{id:'archive-time', label:'학습시간 조회'}, {id:'archive-login', label:'로그인 이력 조회'}, {id:'archive-remind', label:'독려 발송내역'}, {id:'archive-stats', label:'결과보고서'}]},
+    children:[{id:'archive-time', label:'학습시간 조회'}, {id:'archive-login', label:'로그인 이력 조회'}, {id:'archive-cert', label:'훈련인증서 발급 현황'}, {id:'archive-stats', label:'결과보고서'}]},
   {id:'cs',    label:'고객행복센터',    icon:'headset'},
   {id:'contract', label:'계약관리',     icon:'doc'},
   {id:'addon', label:'부가서비스',      icon:'plus'}
@@ -465,7 +488,7 @@ function renderLnb(){
   const chev = '<svg class="chev" viewBox="0 0 12 12"><path d="M3 4.5l3 3 3-3"/></svg>';
   document.getElementById('lnb').innerHTML = MENUS.map(m => {
     const subs = m.children
-      ? m.children.map(c => `<button class="menu-2 ${(currentPage===c.id || (c.id==='cprod-list' && currentPage==='cprod-detail') || (c.id==='pcorp-list' && currentPage==='pcorp-detail') || (c.id==='emp-list' && currentPage==='emp-detail') || (c.id==='learn-course' && currentPage==='learn-course-detail') || (c.id==='client-list' && currentPage==='client-detail') || (c.id==='archive-time' && currentPage==='archive-time-detail') || (c.id==='site-list' && currentPage==='site-manage'))?'active':''}" onclick="go('${c.id}','${m.id}')">${c.label}</button>`).join('')
+      ? m.children.map(c => `<button class="menu-2 ${(currentPage===c.id || (c.id==='cprod-list' && currentPage==='cprod-detail') || (c.id==='pcorp-list' && currentPage==='pcorp-detail') || (c.id==='emp-list' && currentPage==='emp-detail') || (c.id==='learn-course' && currentPage==='learn-course-detail') || (c.id==='client-list' && currentPage==='client-detail') || (c.id==='archive-time' && (currentPage==='archive-time-detail' || currentPage==='archive-time-corp-detail')) || (c.id==='archive-stats' && currentPage==='archive-stats-detail') || (c.id==='site-list' && currentPage==='site-manage'))?'active':''}" onclick="go('${c.id}','${m.id}')">${c.label}</button>`).join('')
       : `<div class="menu-empty">하위 메뉴 정의 예정</div>`;
     return `
       <div class="menu-group ${openGroup===m.id?'open':''}">
@@ -660,7 +683,8 @@ function movePage(n){ state.page = n; renderTable(); }
 
 // 엑셀 다운로드 — 즉시 다운로드하지 않고 파일 생성 요청 후 안내 모달 노출
 // 생성 대상: 현재 적용된 검색 조건의 결과 전체(페이지 무관)
-function downloadExcel(){ document.getElementById('excelModal').classList.add('show'); }
+const EXCEL_MSG = '엑셀 파일 생성이 시작되었습니다.<br>생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.';
+function downloadExcel(msg){ document.getElementById('excelModalBody').innerHTML = typeof msg === 'string' ? msg : EXCEL_MSG; document.getElementById('excelModal').classList.add('show'); }
 function closeExcelModal(){ document.getElementById('excelModal').classList.remove('show'); }
 function goFileDownload(){ closeExcelModal(); currentPage='file-download'; openGroup=null; renderLnb(); renderPage(); }
 document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeExcelModal(); closeLearnSetting(); } });
@@ -1105,6 +1129,22 @@ const EMP_LAST = ['김','이','박','최','정','강','조','윤','장','임','�
 const EMP_FIRST = ['민준','서연','도윤','하은','지호','서윤','예준','지유','시우','수아','주원','지민','하준','채원','은우'];
 const DEPTS = ['-','인사팀','교육팀','영업1팀','마케팅팀','재무팀','개발팀','품질관리팀'];
 const RANKS = ['-','사원','주임','대리','과장','차장','부장'];
+// 계열사 포함 연수원 — 그룹사 기업 연수원 안의 계열사(가상). 그룹사 기업코드: [계열사]
+// 같은 연수원 = 같은 계약 = 같은 훈련과정 ID. 프로토타입 훈련과정 ID 배정(기업코드 % 3)과 맞춘 가상 코드
+const AFFILIATE_CORPS = {
+  424: [{ code:901, name:'flexqasubb 물류 기업' }, { code:904, name:'flexqasubb 테크 기업' }],
+  426: [{ code:903, name:'Flex26 Basic 서비스 기업' }]
+};
+// 연수원 소속 임직원을 순서대로 그룹사·계열사에 나눠 배정하는 순서 (0 = 그룹사 기업, n = n번째 계열사)
+const AFFILIATE_SLOTS = { 424: [1, 0, 2, 0], 426: [1, 0] };
+const _affSeq = {};
+function affiliateOf(e){
+  const affs = AFFILIATE_CORPS[e.corpCode];
+  if(!affs) return e;
+  const k = _affSeq[e.corpCode] = (_affSeq[e.corpCode] ?? -1) + 1;
+  const slots = AFFILIATE_SLOTS[e.corpCode], c = affs[slots[k % slots.length] - 1];
+  return c ? { ...e, corpCode: c.code, corpName: c.name } : e;
+}
 function buildEmployees(){
   const sites = DATA.filter(d => d.cateMap==='Y');
   return Array.from({length:137}, (_,i) => {
@@ -1126,7 +1166,7 @@ function buildEmployees(){
       status: i % 9 === 0 ? '퇴사' : (i % 11 === 0 ? '모니터링' : '재직'),   // 근무상태: 재직 / 모니터링(모니터링 계정) / 퇴사
       regAt: `2026.${mon}.${day} 18:00`, updAt: `2026.${mon}.${day} 18:00`
     };
-  }).map(e => e.status !== '퇴사' ? e
+  }).map(affiliateOf).map(e => e.status !== '퇴사' ? e
     // (완) 서비스별 탈퇴 사용자 정보 표시 정책 — ADMIN: 이름 '탈퇴한 임직원', 아이디·사번·부서·직급·휴대번호 '-'
     // 회사 정보는 신청·학습·결과 관리 화면 정산 확인용으로 유지. 근무상태 '-'. 학습 이력은 삭제하지 않음
     : { ...e, retired: true, name: WITHDRAWN_NAME, loginId: '-', empNo: '-', dept: '-', rank: '-', mobile: '-', status: '-' });
@@ -2458,8 +2498,7 @@ function atRows(){
   // 퇴사자는 개인정보가 없으므로 임직원 검색 결과에서 제외
   return EMPLOYEES.filter(e => atBaseMatch(e, f) && (!q || (!e.retired && String(e[f.kType]).toLowerCase().includes(q))))
     .map(e => { const c = archiveCalc(e, f); return { e, c, last: c.rows.reduce((m,x)=> x.date > m ? x.date : m, '') }; })
-    // 최근 학습일순. 학습 이력이 없는 회원은 하단
-    .sort((a,b) => b.last.localeCompare(a.last));
+        .sort((a,b) => b.last.localeCompare(a.last) || a.e.name.localeCompare(b.e.name, 'ko') || a.e.loginId.localeCompare(b.e.loginId));   // 최근 학습일 최신순 → 이름 가나다순 → 아이디 오름차순. 학습 이력 없는 행은 하단
 }
 function renderAtTable(){
   const f = at.applied, rows = atRows(), total = rows.length;
@@ -2520,7 +2559,7 @@ function atCorpRows(){
   });
   return Object.values(groups).map(g => ({ ...g, s: corpStats(corpTargets(g.key)) }))
     // 기업명 가나다순, 같은 기업은 학습기간 시작일 최신순
-    .sort((a,b) => a.e.corpName.localeCompare(b.e.corpName, 'ko') || trainingRangeOf(b.e)[0].localeCompare(trainingRangeOf(a.e)[0]));
+    .sort((a,b) => a.e.corpName.localeCompare(b.e.corpName, 'ko') || a.e.siteName.localeCompare(b.e.siteName, 'ko') || trainingRangeOf(b.e)[0].localeCompare(trainingRangeOf(a.e)[0]));   // 기업명 → 연수원명 가나다순 → 학습기간 시작일 최신순
 }
 function renderAtCorpTable(){
   const rows = atCorpRows(), total = rows.length;
@@ -2584,7 +2623,7 @@ function renderCorpDetail(){
   const rows = list.map(e => { const c = archiveCalc(e, afInit()); return { e, c, last: c.rows.reduce((m,x)=> x.date > m ? x.date : m, '') }; })
     .filter(({e,c}) => (!q || (!e.retired && String(e[f.kType]).toLowerCase().includes(q)))
       && (!f.pass || (f.pass==='이수') === (c.total >= ARCHIVE_PASS_SEC)))
-    .sort((a,b) => b.last.localeCompare(a.last));
+    .sort((a,b) => b.last.localeCompare(a.last) || a.e.name.localeCompare(b.e.name, 'ko') || a.e.loginId.localeCompare(b.e.loginId));   // 최근 학습일 최신순 → 이름 가나다순 → 아이디 오름차순. 학습 이력 없는 행은 하단
   const pages = Math.max(1, Math.ceil(rows.length/acd.size));
   if(acd.page > pages) acd.page = pages;
   const slice = rows.slice((acd.page-1)*acd.size, acd.page*acd.size);
@@ -2760,6 +2799,9 @@ function atdSearch(){
   const f = isC ? { from:d.from, to:d.to, cat1: document.getElementById('atdCat1').value, cat2: document.getElementById('atdCat2').value, cType: document.getElementById('atdCType').value, kw: document.getElementById('atdKw').value }
                 : { from:d.from, to:d.to, kw: document.getElementById('atdKw').value };
   if(f.from && f.to && f.from > f.to){ toast('종료일은 시작일 이후로 선택해주세요.'); return; }
+  // 학습기간 밖 날짜로 검색 시 안내 후 조회 불가 (개인별 학습시간 4-2-3)
+  const [ps, pe] = trainingRangeOf(EMPLOYEES[atd.id-1]);
+  if((f.from && (f.from < ps || f.from > pe)) || (f.to && (f.to < ps || f.to > pe))){ toast(`학습기간(${trainingPeriodOf(EMPLOYEES[atd.id-1])}) 내에서 선택해주세요.`); return; }
   if(isC){ atd.formC = f; atd.appliedC = {...f}; } else { atd.formL = f; atd.appliedL = {...f}; }
   atd.page = 1; renderArchiveDetail();
 }
@@ -2775,42 +2817,57 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;'
 /* =========================================================
    아카이브 현황 > 결과보고서
    - 기업별 결과보고서 다운로드 메뉴. 학습자 목록·학습 이력 엑셀은 부가서비스 > 데이터 추출 템플릿으로 제공
-   - 목록: 1행 = 훈련과정 ID / 상세: 대상 기업 목록. 1행 = 기업 × 훈련과정 ID = 결과보고서 파일 1개
-   - 집계 대상: 아카이브 대상자 전체(재직·모니터링·퇴사자). 퇴사자 화면 '탈퇴한 임직원', 엑셀 개인정보 '-'
-   - 학습자 수 = 아카이브 대상자 수(학습 이력 없는 회원 포함). 이수 = 총 누적시간 15시간 이상
-   - 이수율 = 이수 인원수 ÷ 학습자 수 / 1인당 평균 누적시간 = 전체 누적시간 ÷ 학습자 수(초 절사)
-   - 정부지원금 = 이수 인원수(재직) × 1인 교육비 × 지원 비율. '대기업'·사업장규모 없음 0원
-   - 결과보고서 다운로드: 학습기간 종료 후 가능. 행별 [다운로드] / 체크 후 [선택 다운로드](기업별 파일 분리). Admin 공통 엑셀 다운로드 방식 준용
+   - 템플릿(출력 파일) 기준: [ADMIN] 아카이브 결과보고서
+   - 목록: 1행 = 훈련과정 ID / 상세: 대상 기업 목록. 1행 = 보고서 1개
+     · 계열사 보고서: 기업 × 연수원 × 훈련과정 ID (같은 기업이 연수원 2곳 이상이면 연수원별 보고서, 합산 없음)
+     · 그룹사 보고서: 그룹사 × 훈련과정 ID. 그룹사와 소속 계열사 대상자 합산 (거래처 정보 그룹사여부·그룹사 기업코드 기준)
+       같은 훈련과정 ID에 그룹사·계열사 합쳐 2곳 이상일 때만 생성. 보고서 구분 표기 없음
+     · 같은 훈련과정 ID = 같은 학습기간이므로 그룹사 보고서의 학습기간은 하나
+   - 집계 대상: 대상자(근무상태 '재직'). '모니터링' 계정·퇴사자 미집계 (학습시간 조회와 같은 조건)
+   - 대상자 수 = 학습 이력 없는 대상자 포함. 이수 = 누적 인정시간 15시간 이상
+   - 이수율 = 이수 인원수 ÷ 대상자 수 / 1인당 평균 누적 인정시간 = 누적 인정시간 합계 ÷ 대상자 수(초 절사)
+   - 정부지원금(예상) = 이수 인원수 × 1인 교육비 × 지원 비율. '대기업'·사업장규모 없음 '-'
+     · 그룹사 보고서: 사업장규모 '-', 정부지원금(예상) = 계열사별 산출값 합계(모두 '-'이면 '-')
+   - 1인당 평균 누적 인정시간: 대상 기업 목록에만 표기(대상자 수 우측, 기업별 학습시간 목록 순서와 동일). 'H시간 M분 S초'(초 환산 괄호 없음)
+   - 대상 기업 목록 항목: 결과보고서 정의서 표지·INTRO(기관명·학습기간·훈련생 수)와 4-3 이수 현황_기업 기준 항목 순서 준용
+     · 훈련생 수 → 대상자 수(학습시간 조회 용어). 총 교육비 = 대상자 수 × 1인 교육비. 그룹사 행 사업장규모·지원 비율 '-'
+   - 목록: 학습기간 종료된 훈련과정만 노출(종료일 다음 날부터). 진행상태 필터·열 없음. 0건 문구 '학습기간이 종료된 훈련과정이 없습니다.'
+   - 대상 기업 목록 페이징: Admin 공통. 전체 선택은 현재 페이지 기준, 페이지 이동 시 선택 유지, [검색]·[초기화] 시 선택 해제
+   - 상세 기본정보: 목록 항목·순서와 동일. 대상 기업 목록 상단 안내 문구 없음. 선택 0건이면 [결과보고서 다운로드] 비활성(회색)
+   - 결과보고서 다운로드: 학습기간 종료 후 가능. 행별 [다운로드] / 체크 후 [결과보고서 다운로드]
+     → 레이어 팝업에서 출력 형태(요약 보고서 / 상세 데이터, 복수 선택. 디폴트 요약 보고서) 선택 → 파일 생성 요청(Admin 공통 다운로드 방식)
    ========================================================= */
-const asInit = () => ({ trainId:'', status:'' });
+const asInit = () => ({ trainId:'' });
 const ast = { form: asInit(), applied: asInit(), page:1, size:20 };
-const asdInit = () => ({ cType:'corpName', kw:'' });
-const asd = { id:null, form: asdInit(), applied: asdInit(), sel: new Set() };   // sel: 체크한 기업코드
-const statTargets = id => EMPLOYEES.filter(e => trainingIdOf(e)===id);
+const asdInit = () => ({ cType:'name', kw:'' });
+const asd = { id:null, form: asdInit(), applied: asdInit(), sel: new Set(), page:1, size:20 };   // sel: 체크한 보고서 키(페이지 이동 시 유지)
+// 그룹사 — 거래처 정보의 그룹사여부(Y)·그룹사 기업코드 기준. 프로토타입은 가상 값 { 그룹사 기업코드: [소속 계열사 기업코드] }
+const ARCHIVE_GROUPS = Object.fromEntries(Object.entries(AFFILIATE_CORPS).map(([g, list]) => [g, list.map(c => c.code)]));   // 그룹사 기업코드: [계열사 기업코드]
+const groupOf = code => { for(const g in ARCHIVE_GROUPS){ if(+g === +code || ARCHIVE_GROUPS[g].includes(+code)) return +g; } return null; };
+const statAll = id => EMPLOYEES.filter(e => trainingIdOf(e)===id);
+const statTargets = id => statAll(id).filter(archiveVisible);   // 대상자: '모니터링' 계정·퇴사자 제외
 const corpsOf = list => { const m = {}; list.forEach(e => { m[e.corpCode] = m[e.corpCode] || e; }); return Object.values(m).sort((a,b)=>a.corpName.localeCompare(b.corpName,'ko')); };
 const avgSec = (n, sec) => n ? Math.floor(sec / n) : 0;
 const rateOf = s => rateText({ rate: s.n ? Math.round(s.pass / s.n * 1000) / 10 : 0 });
 // 진행상태 — 학습기간 종료일 다음 날부터 '종료'
 const isEnded = e => !!e && trainingRangeOf(e)[1] !== '' && trainingRangeOf(e)[1] < pdIso(today0());
-// 범위 집계 — 학습자 수, 이수 인원수(재직 구분 포함), 전체 누적시간(초)
+// 범위 집계 — 대상자 수, 이수 인원수, 누적 인정시간 합계(초)
 function statSummary(list){
-  let pass = 0, passWork = 0, sec = 0;
-  list.forEach(e => { const t = archiveCalc(e, afInit()).total; sec += t; if(t >= ARCHIVE_PASS_SEC){ pass++; if(!e.retired && workStateOf(e)==='재직') passWork++; } });
-  return { n: list.length, pass, passWork, fail: list.length - pass, sec };
+  let pass = 0, sec = 0;
+  list.forEach(e => { const t = archiveCalc(e, afInit()).total; sec += t; if(t >= ARCHIVE_PASS_SEC) pass++; });
+  return { n: list.length, pass, fail: list.length - pass, sec };
 }
 function statRows(){
   const f = ast.applied, t = f.trainId.trim().toLowerCase();
   const ids = [...new Set(EMPLOYEES.map(trainingIdOf))];
   return ids.filter(id => !t || id.toLowerCase().includes(t))
-    .map(id => { const list = statTargets(id); return { id, list, e0: list[0], s: statSummary(list), corps: corpsOf(list).length, ended: isEnded(list[0]) }; })
-    .filter(r => !f.status || (f.status === '종료') === r.ended)
+    .map(id => { const all = statAll(id), list = statTargets(id); return { id, list, e0: all[0], s: statSummary(list), corps: corpsOf(all).length, ended: isEnded(all[0]) }; })
+    .filter(r => r.ended)   // 학습기간 종료(종료일 다음 날부터)된 훈련과정만 노출
     .sort((a,b) => trainingRangeOf(b.e0||{})[0].localeCompare(trainingRangeOf(a.e0||{})[0]));
 }
 const DL_ICON = '<svg viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>';
 const SEARCH_ICON = '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
 const RESET_ICON = '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>';
-const statusChip = ended => `<span class="chip ${ended?'':'off'}">${ended?'종료':'진행중'}</span>`;
-
 // ── 목록: 훈련과정
 function renderArchiveStats(){
   const f = ast.form;
@@ -2825,9 +2882,6 @@ function renderArchiveStats(){
           <div class="field"><label>훈련과정 ID</label><div class="inputs">
             <div class="search-input xs">${SEARCH_ICON}<input id="asTrainId" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(f.trainId)}"></div>
           </div></div>
-          <div class="field"><label>진행상태</label><div class="inputs">
-            <select class="select mid" id="asStatus">${opt(['진행중','종료'], f.status, '진행상태 전체')}</select>
-          </div></div>
           <div class="btns">
             <button class="btn btn-primary" onclick="asSearch()">${SEARCH_ICON}검색</button>
             <button class="btn btn-line" onclick="asReset()">${RESET_ICON}초기화</button>
@@ -2837,7 +2891,7 @@ function renderArchiveStats(){
       <div class="table-head"><div class="count" id="asCount"></div></div>
       <div class="table-wrap">
         <table style="min-width:1100px;table-layout:fixed">
-          <thead><tr><th style="width:50px">No.</th><th style="width:170px">훈련과정 ID</th><th style="width:200px">학습기간</th><th style="width:90px">진행상태</th><th>대상 기업 수</th><th>학습자 수</th><th>이수 인원수</th><th>이수율</th><th style="width:200px">1인당 평균 누적시간</th></tr></thead>
+          <thead><tr><th style="width:50px">No.</th><th style="width:170px">훈련과정 ID</th><th style="width:200px">학습기간</th><th>대상 기업 수</th><th>대상자 수</th><th>이수 인원수</th><th>이수율</th></tr></thead>
           <tbody id="asBody"></tbody>
         </table>
       </div>
@@ -2850,56 +2904,82 @@ function renderArchiveStats(){
   document.getElementById('asBody').innerHTML = total ? rows.slice((ast.page-1)*ast.size, ast.page*ast.size).map((r,i) => `<tr>
       <td>${(ast.page-1)*ast.size + i + 1}</td>
       <td><button class="link" onclick="openStatsDetail('${r.id}')">${r.id}</button></td>
-      <td>${r.e0 ? trainingPeriodOf(r.e0) : '-'}</td><td>${statusChip(r.ended)}</td>
-      <td>${r.corps}개</td><td>${r.s.n}명</td><td>${r.s.pass}명</td><td>${rateOf(r.s)}</td><td>${hms(avgSec(r.s.n, r.s.sec))}</td></tr>`).join('')
-    : `<tr class="empty"><td colspan="9">검색 결과가 없습니다.</td></tr>`;
+      <td>${r.e0 ? trainingPeriodOf(r.e0) : '-'}</td>
+      <td>${r.corps}개</td><td>${r.s.n}명</td><td>${r.s.pass}명</td><td>${rateOf(r.s)}</td></tr>`).join('')
+    : `<tr class="empty"><td colspan="7">${ast.applied.trainId.trim() ? '검색 결과가 없습니다.' : '학습기간이 종료된 훈련과정이 없습니다.'}</td></tr>`;
   document.getElementById('asPager').innerHTML = pagerHtml(ast.page, pages, 'asMovePage');
 }
 function asSearch(){
   const v = id => document.getElementById(id).value;
-  ast.form = { trainId: v('asTrainId'), status: v('asStatus') };
+  ast.form = { trainId: v('asTrainId') };
   ast.applied = { ...ast.form }; ast.page = 1; renderArchiveStats();
 }
 function asReset(){ ast.form = asInit(); ast.applied = asInit(); ast.page = 1; renderArchiveStats(); }
 function asMovePage(n){ ast.page = n; renderArchiveStats(); }
-
-// ── 상세: 훈련과정 상세 + 대상 기업 목록(결과보고서 다운로드)
+// ── 상세: 결과보고서 상세(훈련과정 기본정보) + 대상 기업 목록(결과보고서 다운로드)
 function openStatsDetail(id){
-  asd.id = id; asd.form = asdInit(); asd.applied = asdInit(); asd.sel = new Set();
+  asd.id = id; asd.form = asdInit(); asd.applied = asdInit(); asd.sel = new Set(); asd.page = 1;
   currentPage = 'archive-stats-detail'; openGroup = 'archive'; renderLnb(); renderPage();
 }
-function corpRowsOf(all){
-  const f = asd.applied, k = f.kw.trim().toLowerCase();
-  return corpsOf(all).filter(e => !k || String(e[f.cType]).toLowerCase().includes(k)).map(e => {
-    const list = all.filter(x => x.corpCode === e.corpCode), s = statSummary(list), r = supportRateOf(e);
-    return { e, s, support: r === null ? 0 : Math.round(s.passWork * ARCHIVE_FEE * r) };
+// 보고서 행 — 계열사 보고서(기업 × 연수원) + 그룹사 보고서(그룹사 + 소속 계열사 합산)
+function reportRowsOf(id){
+  const all = statAll(id), vis = all.filter(archiveVisible);
+  const units = {};
+  all.forEach(e => { const k = `${e.corpCode}|${e.siteCode}`; units[k] = units[k] || e; });
+  const corpRows = Object.values(units).map(e => {
+    const s = statSummary(vis.filter(x => x.corpCode===e.corpCode && x.siteCode===e.siteCode)), r = supportRateOf(e);
+    return { key:`C|${e.corpCode}|${e.siteCode}`, kind:'계열사', code:e.corpCode, name:e.corpName, siteCode:e.siteCode, siteName:e.siteName,
+             size: bizSizeOf(e), rate: r, s, support: r === null ? null : Math.round(s.pass * ARCHIVE_FEE * r), grp: groupOf(e.corpCode) };
   });
+  const groupRows = Object.keys(ARCHIVE_GROUPS).map(g => {
+    // 그룹사 기업 연수원 안의 계열사만 합산 (그룹사·계열사는 연수원 단위로 등록)
+    const gSite = (corpRows.find(r => +r.code === +g) || {}).siteCode;
+    const mem = corpRows.filter(r => r.grp === +g && r.siteCode === gSite);
+    if(mem.length < 2) return null;   // 계열사 1곳뿐이면 그룹사 보고서 미생성 (계열사 보고서와 같은 값)
+    const head = EMPLOYEES.find(e => +e.corpCode === +g);
+    const codes = new Set(mem.map(r => +r.code));
+    const s = statSummary(vis.filter(x => codes.has(+x.corpCode)));
+    const sups = mem.map(r => r.support).filter(v => v !== null);
+    return { key:`G|${g}`, kind:'그룹사', code:+g, name: head ? head.corpName : String(g),
+             siteCode: gSite, siteName: mem.find(r => +r.code === +g).siteName,
+             size:'-', rate:null, s, support: sups.length ? sups.reduce((a,b)=>a+b, 0) : null, grp:+g, members: mem.length };
+  }).filter(Boolean);
+  // 정렬: 그룹 단위로 묶음(그룹사 보고서 → 그룹사 기업 → 계열사 가나다순), 그룹 간·단독 기업은 기업명 가나다순
+  const nameOfGrp = r => r.grp !== null ? (groupRows.find(g => g.grp === r.grp) || r).name : r.name;
+  const rank = r => r.kind === '그룹사' ? 0 : (+r.code === r.grp ? 1 : 2);
+  return [...groupRows, ...corpRows].sort((a,b) => nameOfGrp(a).localeCompare(nameOfGrp(b),'ko') || rank(a) - rank(b) || a.name.localeCompare(b.name,'ko'));
+}
+function filteredReportRows(){
+  const f = asd.applied, k = f.kw.trim().toLowerCase();
+  return reportRowsOf(asd.id).filter(r => !k || String(r[f.cType]).toLowerCase().includes(k));
 }
 function renderStatsDetail(){
-  const all = statTargets(asd.id), e0 = all[0] || EMPLOYEES[0], S = statSummary(all), ended = isEnded(e0);
-  const rows = corpRowsOf(all);
-  asd.pageCodes = rows.map(r => String(r.e.corpCode));
+  const all = statAll(asd.id), e0 = all[0] || EMPLOYEES[0], S = statSummary(statTargets(asd.id));
+  if(!isEnded(e0)){ toast('학습기간이 종료된 훈련과정만 조회할 수 있습니다.'); go('archive-stats','archive'); return; }   // 딥링크 등으로 미종료 훈련과정 진입 시
+  const rows = filteredReportRows();
+  // 페이징: Admin 공통(20건). 전체 선택은 현재 페이지 기준, 페이지 이동 시 선택 유지
+  const pages = Math.max(1, Math.ceil(rows.length / asd.size));
+  if(asd.page > pages) asd.page = pages;
+  const off0 = (asd.page - 1) * asd.size, slice = rows.slice(off0, off0 + asd.size);
+  asd.pageCodes = slice.map(r => r.key);
   const row2 = (k1,v1,k2,v2) => `<tr><th>${k1}</th><td>${v1}</td><th>${k2}</th><td>${v2}</td></tr>`;
-  const off = 'disabled style="opacity:.45;cursor:not-allowed"';
   document.getElementById('page').innerHTML = `
     <div class="page-head">
-      <h1>훈련과정 상세</h1>
-      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 결과보고서 <span>›</span> <b>훈련과정 상세</b></div>
+      <h1>결과보고서 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 결과보고서 <span>›</span> <b>결과보고서 상세</b></div>
     </div>
     <div class="card">
       <h3 class="sub-title">기본정보</h3>
       <table class="kv-table kv-2col">
         ${row2('훈련과정 ID', asd.id, '학습기간', trainingPeriodOf(e0))}
-        ${row2('진행상태', statusChip(ended), '대상 기업 수', corpsOf(all).length + '개')}
-        ${row2('학습자 수', S.n + '명', '이수 인원수', S.pass + '명')}
-        ${row2('이수율', rateOf(S), '1인당 평균 누적시간', hms(avgSec(S.n, S.sec)))}
+        ${row2('대상 기업 수', corpsOf(all).length + '개', '대상자 수', S.n + '명')}
+        ${row2('이수 인원수', S.pass + '명', '이수율', rateOf(S))}
       </table>
-
       <h3 class="sub-title">대상 기업 목록</h3>
       <div class="filter-box">
         <div class="filter-row nowrap">
           <div class="field"><label>기업 검색</label><div class="inputs">
-            <select class="select" style="width:90px" id="asdCType"><option value="corpName" ${asd.form.cType==='corpName'?'selected':''}>기업명</option><option value="corpCode" ${asd.form.cType==='corpCode'?'selected':''}>기업코드</option></select>
+            <select class="select" style="width:90px" id="asdCType"><option value="name" ${asd.form.cType==='name'?'selected':''}>기업명</option><option value="code" ${asd.form.cType==='code'?'selected':''}>기업코드</option></select>
             <div class="search-input xs">${SEARCH_ICON}<input id="asdKw" type="text" placeholder="검색어를 입력해주세요." value="${escapeHtml(asd.form.kw)}" onkeydown="if(event.key==='Enter')asdSearch()"></div>
           </div></div>
           <div class="btns">
@@ -2908,32 +2988,35 @@ function renderStatsDetail(){
           </div>
         </div>
       </div>
-      ${ended ? '' : `<p style="margin:0 0 10px;font-size:12px;color:var(--text-sub)">※ 학습기간 종료 후 결과보고서를 다운로드할 수 있습니다.</p>`}
       <div class="table-head">
         <div class="count">검색결과 ${rows.length}건</div>
         <div class="btns" id="asdDl"></div>
       </div>
       <div class="table-wrap">
-        <table style="min-width:1100px;table-layout:fixed">
-          <thead><tr><th style="width:44px"><input type="checkbox" id="asdAll" aria-label="전체 선택" ${ended?'':'disabled'} onchange="asdToggleAll(this.checked)"></th><th style="width:50px">No.</th><th style="width:90px">기업코드</th><th style="text-align:left">기업명</th><th style="width:100px">사업장규모</th><th style="width:90px">학습자 수</th><th style="width:100px">이수 인원수</th><th style="width:80px">이수율</th><th style="width:130px">정부지원금</th><th style="width:110px">결과보고서</th></tr></thead>
-          <tbody>${rows.length ? rows.map((r,i)=>{ const c = String(r.e.corpCode); return `<tr>
-            <td><input type="checkbox" aria-label="${escapeHtml(r.e.corpName)} 선택" ${ended?'':'disabled'} ${asd.sel.has(c)?'checked':''} onchange="asdToggle('${c}', this.checked)"></td>
-            <td>${i+1}</td><td>${c}</td><td style="text-align:left">${escapeHtml(r.e.corpName)}</td><td>${bizSizeOf(r.e)}</td>
-            <td>${r.s.n}명</td><td>${r.s.pass}명</td><td>${rateOf(r.s)}</td><td style="text-align:right">${r.support.toLocaleString()}원</td>
-            <td><button class="btn btn-line btn-sm" ${ended ? 'onclick="downloadExcel()"' : off}>${DL_ICON}다운로드</button></td></tr>`; }).join('')
-            : `<tr class="empty"><td colspan="10">검색 결과가 없습니다.</td></tr>`}</tbody>
+        <table style="min-width:1490px;table-layout:fixed">
+          <thead><tr><th style="width:44px"><input type="checkbox" id="asdAll" aria-label="전체 선택" onchange="asdToggleAll(this.checked)"></th><th style="width:50px">No.</th><th style="width:76px">기업코드</th><th style="text-align:left;width:180px">기업명</th><th style="width:84px">연수원코드</th><th style="text-align:left;width:150px">연수원명</th><th style="width:80px">대상자 수</th><th style="width:150px">1인당 평균 누적 인정시간</th><th style="width:90px">이수 인원수</th><th style="width:70px">이수율</th><th style="width:110px">총 교육비</th><th style="width:90px">사업장규모</th><th style="width:76px">지원 비율</th><th style="width:130px">정부지원금(예상)</th><th style="width:110px">결과보고서</th></tr></thead>
+          <tbody>${rows.length ? slice.map((r,i)=>`<tr>
+            <td><input type="checkbox" aria-label="${escapeHtml(r.name)} 선택" ${asd.sel.has(r.key)?'checked':''} onchange="asdToggle('${r.key}', this.checked)"></td>
+            <td>${off0 + i + 1}</td><td>${r.code}</td>
+            <td style="text-align:left">${escapeHtml(r.name)}</td>
+            <td>${r.siteCode}</td><td style="text-align:left">${escapeHtml(r.siteName)}</td>
+            <td>${r.s.n}명</td><td>${hmsText(avgSec(r.s.n, r.s.sec))}</td><td>${r.s.pass}명</td><td>${rateOf(r.s)}</td><td style="text-align:right">${(r.s.n * ARCHIVE_FEE).toLocaleString()}원</td>
+            <td>${r.size}</td><td>${r.rate === null ? '-' : Math.round(r.rate * 100) + '%'}</td><td style="text-align:right">${r.support === null ? '-' : r.support.toLocaleString() + '원'}</td>
+            <td><button class="btn btn-line btn-sm" onclick="openReportModal(['${r.key}'])">${DL_ICON}다운로드</button></td></tr>`).join('')
+            : `<tr class="empty"><td colspan="15">검색 결과가 없습니다.</td></tr>`}</tbody>
         </table>
       </div>
+      ${rows.length ? `<div class="pagination">${pagerHtml(asd.page, pages, 'asdMovePage')}</div>` : ''}
       <div class="back-foot"><button class="btn btn-line" onclick="go('archive-stats','archive')"><svg viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>목록</button></div>
     </div>`;
-  asdRenderDl(ended);
+  asdRenderDl();
 }
-// [결과보고서 다운로드] — 체크한 기업별 결과보고서(기업별 파일). 종료 전·선택 0건이면 비활성
-function asdRenderDl(ended){
-  if(ended === undefined) ended = isEnded(statTargets(asd.id)[0]);
-  const n = asd.sel.size, on = ended && n;
+// [결과보고서 다운로드] — 체크한 보고서. 선택 0건이면 비활성(회색)
+function asdRenderDl(){
+  const n = asd.sel.size, on = n > 0;
   document.getElementById('asdDl').innerHTML = `<span style="font-size:11px;color:var(--text-sub);align-self:center;margin-right:4px">선택 ${n}건</span>`
-    + `<button class="btn btn-primary" ${on ? 'onclick="downloadExcel()"' : 'disabled style="opacity:.45;cursor:not-allowed"'}>${DL_ICON}결과보고서 다운로드</button>`;
+    + (on ? `<button class="btn btn-primary" onclick="openReportModal([...asd.sel])">${DL_ICON}결과보고서 다운로드</button>`
+          : `<button class="btn btn-off" disabled>${DL_ICON}결과보고서 다운로드</button>`);
   const all = document.getElementById('asdAll'), ids = asd.pageCodes || [];
   if(all){ const k = ids.filter(c => asd.sel.has(c)).length; all.checked = ids.length > 0 && k === ids.length; all.indeterminate = k > 0 && k < ids.length; }
 }
@@ -2942,10 +3025,34 @@ function asdToggleAll(on){ (asd.pageCodes || []).forEach(c => on ? asd.sel.add(c
 function asdSearch(){
   const v = id => document.getElementById(id).value;
   asd.form = { cType: v('asdCType'), kw: v('asdKw') };
-  asd.applied = { ...asd.form }; asd.sel.clear(); renderStatsDetail();
+  asd.applied = { ...asd.form }; asd.sel.clear(); asd.page = 1; renderStatsDetail();
 }
-function asdReset(){ asd.form = asdInit(); asd.applied = asdInit(); asd.sel.clear(); renderStatsDetail(); }
-
+function asdReset(){ asd.form = asdInit(); asd.applied = asdInit(); asd.sel.clear(); asd.page = 1; renderStatsDetail(); }
+function asdMovePage(n){ asd.page = n; renderStatsDetail(); }   // 선택 유지
+// ── 결과보고서 다운로드 레이어 팝업 — 출력 형태 선택(요약 보고서 / 상세 데이터). 선택한 형태만 파일 생성
+let reportKeys = [];
+// 출력 형태 — 요약 보고서 / 상세 데이터 복수 선택. 디폴트 요약 보고서. 0개 선택 시 [다운로드] 비활성
+const reportTypes = () => [...document.querySelectorAll('input[name="reportType"]:checked')].map(x => x.value);
+function reportTypeChange(){
+  const t = reportTypes(), files = reportKeys.length * t.length, ok = document.getElementById('reportModalOk');
+  ok.disabled = !t.length; ok.style.opacity = t.length ? '' : '.45'; ok.style.cursor = t.length ? '' : 'not-allowed';
+  document.getElementById('reportModalZip').style.display = files > 1 ? '' : 'none';
+}
+function openReportModal(keys){
+  reportKeys = keys;
+  document.getElementById('reportModalCount').textContent = `선택한 보고서 ${keys.length}건`;
+  document.querySelectorAll('input[name="reportType"]').forEach(x => x.checked = x.value === 'summary');
+  reportTypeChange();
+  document.getElementById('reportModal').classList.add('show');
+}
+function closeReportModal(){ document.getElementById('reportModal').classList.remove('show'); }
+function submitReport(){
+  const t = reportTypes();
+  if(!t.length) return;
+  const label = t.map(v => v === 'summary' ? '요약 보고서' : '상세 데이터').join(' · ');
+  closeReportModal();
+  downloadExcel(`결과보고서(${label}) ${reportKeys.length}건의 파일 생성이 시작되었습니다.<br>생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.`);
+}
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
 
 /* =========================================================
@@ -2956,7 +3063,7 @@ const PAGE_GROUP = {
   'cprod-list':'cprod','cprod-detail':'cprod','pcorp-list':'pcorp','pcorp-detail':'pcorp',
   'emp-list':'emp','emp-detail':'emp','learn-course':'learn','learn-course-detail':'learn',
   'client-list':'client','client-detail':'client','site-list':'site','site-manage':'site',
-  'archive-time':'archive','archive-time-detail':'archive','archive-time-corp-detail':'archive','archive-login':'archive','archive-remind':'archive','archive-stats':'archive','archive-stats-detail':'archive','file-download':null
+  'archive-time':'archive','archive-time-detail':'archive','archive-time-corp-detail':'archive','archive-login':'archive','archive-cert':'archive','archive-stats':'archive','archive-stats-detail':'archive','file-download':null
 };
 let routing = false;
 function stateToHash(){
