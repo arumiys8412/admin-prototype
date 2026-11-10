@@ -407,19 +407,18 @@
   </div>
 </div>
 
-<!-- 결과보고서 다운로드 레이어 팝업 (아카이브 현황 > 결과보고서 > 결과보고서 상세) -->
+<!-- 훈련결과보고서 다운로드 레이어 팝업 (아카이브 현황 > 훈련결과보고서 > 훈련결과보고서 상세) -->
 <div class="dim" id="reportModal" onclick="if(event.target===this)closeReportModal()">
   <div class="modal" role="dialog" aria-modal="true" aria-labelledby="reportModalTitle">
     <div class="modal-head" style="margin-bottom:20px">
-      <h2 id="reportModalTitle">결과보고서 다운로드</h2>
+      <h2 id="reportModalTitle">훈련결과보고서 다운로드</h2>
       <button class="modal-close" onclick="closeReportModal()" aria-label="닫기"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <div class="modal-body">
-      <div id="reportModalCount" style="font-weight:700;margin-bottom:12px"></div>
       <div style="font-size:12px;font-weight:700;margin-bottom:8px">출력 형태</div>
       <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:6px"><input type="checkbox" name="reportType" value="summary" checked onchange="reportTypeChange()" style="accent-color:#374151">요약 보고서</label>
       <label style="display:flex;gap:6px;align-items:center;font-size:12px;margin-bottom:12px"><input type="checkbox" name="reportType" value="detail" onchange="reportTypeChange()" style="accent-color:#374151">상세 데이터 (xlsx)</label>
-      <p style="margin:0;font-size:11px;color:var(--text-sub)">※ 선택한 출력 형태의 파일만 생성됩니다.<br><span id="reportModalZip">※ 파일이 2개 이상이면 압축 파일 1개로 생성됩니다.<br></span></p>
+      <p style="margin:0;font-size:11px;color:var(--text-sub)">※ 선택한 출력 형태의 파일만 생성됩니다.<br>※ 파일이 2개 이상이면 압축 파일 1개로 생성됩니다.</p>
     </div>
     <div class="modal-foot">
       <button class="btn btn-line" onclick="closeReportModal()">취소</button>
@@ -475,7 +474,7 @@ const MENUS = [
     children:[{id:'pcorp-list', label:'상품별 기업관리 목록'}]},
   {id:'cate',  label:'카테고리 관리',   icon:'layer'},
   {id:'archive', label:'아카이브 현황', icon:'layer',
-    children:[{id:'archive-time', label:'학습시간 조회'}, {id:'archive-login', label:'로그인 이력 조회'}, {id:'archive-cert', label:'훈련인증서 발급 현황'}, {id:'archive-stats', label:'결과보고서'}]},
+    children:[{id:'archive-time', label:'학습시간 조회'}, {id:'archive-login', label:'로그인 이력 조회'}, {id:'archive-cert', label:'훈련인증서 발급 현황'}, {id:'archive-stats', label:'훈련결과보고서'}]},
   {id:'cs',    label:'고객행복센터',    icon:'headset'},
   {id:'contract', label:'계약관리',     icon:'doc'},
   {id:'addon', label:'부가서비스',      icon:'plus'}
@@ -2815,13 +2814,15 @@ function atdMovePage(n){ atd.page = n; renderArchiveDetail(); }
 
 function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 /* =========================================================
-   아카이브 현황 > 결과보고서
-   - 기업별 결과보고서 다운로드 메뉴. 학습자 목록·학습 이력 엑셀은 부가서비스 > 데이터 추출 템플릿으로 제공
+   아카이브 현황 > 훈련결과보고서
+   - 기업별 훈련결과보고서 다운로드 메뉴. 학습자 목록·학습 이력 엑셀은 부가서비스 > 데이터 추출 템플릿으로 제공
    - 템플릿(출력 파일) 기준: [ADMIN] 아카이브 결과보고서
    - 목록: 1행 = 훈련과정 ID / 상세: 대상 기업 목록. 1행 = 보고서 1개
      · 계열사 보고서: 기업 × 연수원 × 훈련과정 ID (같은 기업이 연수원 2곳 이상이면 연수원별 보고서, 합산 없음)
      · 그룹사 보고서: 그룹사 × 훈련과정 ID. 그룹사와 소속 계열사 대상자 합산 (거래처 정보 그룹사여부·그룹사 기업코드 기준)
-       같은 훈련과정 ID에 그룹사·계열사 합쳐 2곳 이상일 때만 생성. 보고서 구분 표기 없음
+       그룹사 기업과 같은 연수원의 그룹사·계열사 중 대상자가 있는 기업이 2곳 이상일 때만 생성. 보고서 구분 표기 없음
+     · 조회 시점에 대상자 0명인 기업은 훈련결과보고서 미생성
+     · 퇴사 여부: 화면은 조회 시점, 파일은 생성 시점 기준 / 사업장규모: 학습기간 시작일 기준값
      · 같은 훈련과정 ID = 같은 학습기간이므로 그룹사 보고서의 학습기간은 하나
    - 집계 대상: 대상자(근무상태 '재직'). '모니터링' 계정·퇴사자 미집계 (학습시간 조회와 같은 조건)
    - 대상자 수 = 학습 이력 없는 대상자 포함. 이수 = 누적 인정시간 15시간 이상
@@ -2832,10 +2833,10 @@ function escapeHtml(s){ return s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;'
    - 대상 기업 목록 항목: 결과보고서 정의서 표지·INTRO(기관명·학습기간·훈련생 수)와 4-3 이수 현황_기업 기준 항목 순서 준용
      · 훈련생 수 → 대상자 수(학습시간 조회 용어). 총 교육비 = 대상자 수 × 1인 교육비. 그룹사 행 사업장규모·지원 비율 '-'
    - 목록: 학습기간 종료된 훈련과정만 노출(종료일 다음 날부터). 진행상태 필터·열 없음. 0건 문구 '학습기간이 종료된 훈련과정이 없습니다.'
-   - 대상 기업 목록 페이징: Admin 공통. 전체 선택은 현재 페이지 기준, 페이지 이동 시 선택 유지, [검색]·[초기화] 시 선택 해제
-   - 상세 기본정보: 목록 항목·순서와 동일. 대상 기업 목록 상단 안내 문구 없음. 선택 0건이면 [결과보고서 다운로드] 비활성(회색)
-   - 결과보고서 다운로드: 학습기간 종료 후 가능. 행별 [다운로드] / 체크 후 [결과보고서 다운로드]
-     → 레이어 팝업에서 출력 형태(요약 보고서 / 상세 데이터, 복수 선택. 디폴트 요약 보고서) 선택 → 파일 생성 요청(Admin 공통 다운로드 방식)
+   - 대상 기업 목록 페이징: Admin 공통. 전체 선택은 현재 페이지 기준(일부 선택 상태 표시 없음), 페이지 이동 시 선택 유지, [검색]·[초기화] 시 선택 해제
+   - 상세 기본정보: 목록 항목·순서와 동일. 대상 기업 목록 상단 안내 문구 없음. 선택 0건이면 [훈련결과보고서 다운로드] 비활성(회색)
+   - 훈련결과보고서 다운로드: 학습기간 종료 후 가능. 행별 [다운로드] / 체크 후 [훈련결과보고서 다운로드]
+     → 레이어 팝업에서 출력 형태(요약 보고서 / 상세 데이터, 복수 선택. 디폴트 요약 보고서) 선택 → 파일 생성 요청(Admin 공통 다운로드 방식). 팝업 안내 문구 2줄 항상 노출
    ========================================================= */
 const asInit = () => ({ trainId:'' });
 const ast = { form: asInit(), applied: asInit(), page:1, size:20 };
@@ -2873,8 +2874,8 @@ function renderArchiveStats(){
   const f = ast.form;
   document.getElementById('page').innerHTML = `
     <div class="page-head">
-      <h1>결과보고서</h1>
-      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> <b>결과보고서</b></div>
+      <h1>훈련결과보고서</h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> <b>훈련결과보고서</b></div>
     </div>
     <div class="card">
       <div class="filter-box">
@@ -2916,7 +2917,7 @@ function asSearch(){
 }
 function asReset(){ ast.form = asInit(); ast.applied = asInit(); ast.page = 1; renderArchiveStats(); }
 function asMovePage(n){ ast.page = n; renderArchiveStats(); }
-// ── 상세: 결과보고서 상세(훈련과정 기본정보) + 대상 기업 목록(결과보고서 다운로드)
+// ── 상세: 훈련결과보고서 상세(훈련과정 기본정보) + 대상 기업 목록(훈련결과보고서 다운로드)
 function openStatsDetail(id){
   asd.id = id; asd.form = asdInit(); asd.applied = asdInit(); asd.sel = new Set(); asd.page = 1;
   currentPage = 'archive-stats-detail'; openGroup = 'archive'; renderLnb(); renderPage();
@@ -2926,22 +2927,25 @@ function reportRowsOf(id){
   const all = statAll(id), vis = all.filter(archiveVisible);
   const units = {};
   all.forEach(e => { const k = `${e.corpCode}|${e.siteCode}`; units[k] = units[k] || e; });
-  const corpRows = Object.values(units).map(e => {
+  const unitRows = Object.values(units).map(e => {
     const s = statSummary(vis.filter(x => x.corpCode===e.corpCode && x.siteCode===e.siteCode)), r = supportRateOf(e);
     return { key:`C|${e.corpCode}|${e.siteCode}`, kind:'계열사', code:e.corpCode, name:e.corpName, siteCode:e.siteCode, siteName:e.siteName,
              size: bizSizeOf(e), rate: r, s, support: r === null ? null : Math.round(s.pass * ARCHIVE_FEE * r), grp: groupOf(e.corpCode) };
   });
+  const corpRows = unitRows.filter(r => r.s.n > 0);   // 대상자 0명 기업은 훈련결과보고서 미생성
   const groupRows = Object.keys(ARCHIVE_GROUPS).map(g => {
     // 그룹사 기업 연수원 안의 계열사만 합산 (그룹사·계열사는 연수원 단위로 등록)
-    const gSite = (corpRows.find(r => +r.code === +g) || {}).siteCode;
+    const gUnit = unitRows.find(r => +r.code === +g);   // 그룹사 기업 대상자 0명이어도 연수원 기준은 그룹사 기업
+    if(!gUnit) return null;
+    const gSite = gUnit.siteCode;
     const mem = corpRows.filter(r => r.grp === +g && r.siteCode === gSite);
-    if(mem.length < 2) return null;   // 계열사 1곳뿐이면 그룹사 보고서 미생성 (계열사 보고서와 같은 값)
+    if(mem.length < 2) return null;   // 대상자가 있는 기업 1곳이면 그룹사 보고서 미생성 (계열사 보고서와 같은 값)
     const head = EMPLOYEES.find(e => +e.corpCode === +g);
     const codes = new Set(mem.map(r => +r.code));
     const s = statSummary(vis.filter(x => codes.has(+x.corpCode)));
     const sups = mem.map(r => r.support).filter(v => v !== null);
     return { key:`G|${g}`, kind:'그룹사', code:+g, name: head ? head.corpName : String(g),
-             siteCode: gSite, siteName: mem.find(r => +r.code === +g).siteName,
+             siteCode: gSite, siteName: gUnit.siteName,
              size:'-', rate:null, s, support: sups.length ? sups.reduce((a,b)=>a+b, 0) : null, grp:+g, members: mem.length };
   }).filter(Boolean);
   // 정렬: 그룹 단위로 묶음(그룹사 보고서 → 그룹사 기업 → 계열사 가나다순), 그룹 간·단독 기업은 기업명 가나다순
@@ -2965,8 +2969,8 @@ function renderStatsDetail(){
   const row2 = (k1,v1,k2,v2) => `<tr><th>${k1}</th><td>${v1}</td><th>${k2}</th><td>${v2}</td></tr>`;
   document.getElementById('page').innerHTML = `
     <div class="page-head">
-      <h1>결과보고서 상세</h1>
-      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 결과보고서 <span>›</span> <b>결과보고서 상세</b></div>
+      <h1>훈련결과보고서 상세</h1>
+      <div class="breadcrumb">홈 <span>›</span> 아카이브 현황 <span>›</span> 훈련결과보고서 <span>›</span> <b>훈련결과보고서 상세</b></div>
     </div>
     <div class="card">
       <h3 class="sub-title">기본정보</h3>
@@ -2993,8 +2997,8 @@ function renderStatsDetail(){
         <div class="btns" id="asdDl"></div>
       </div>
       <div class="table-wrap">
-        <table style="min-width:1490px;table-layout:fixed">
-          <thead><tr><th style="width:44px"><input type="checkbox" id="asdAll" aria-label="전체 선택" onchange="asdToggleAll(this.checked)"></th><th style="width:50px">No.</th><th style="width:76px">기업코드</th><th style="text-align:left;width:180px">기업명</th><th style="width:84px">연수원코드</th><th style="text-align:left;width:150px">연수원명</th><th style="width:80px">대상자 수</th><th style="width:150px">1인당 평균 누적 인정시간</th><th style="width:90px">이수 인원수</th><th style="width:70px">이수율</th><th style="width:110px">총 교육비</th><th style="width:90px">사업장규모</th><th style="width:76px">지원 비율</th><th style="width:130px">정부지원금(예상)</th><th style="width:110px">결과보고서</th></tr></thead>
+        <table style="min-width:1510px;table-layout:fixed">
+          <thead><tr><th style="width:44px"><input type="checkbox" id="asdAll" aria-label="전체 선택" onchange="asdToggleAll(this.checked)"></th><th style="width:50px">No.</th><th style="width:76px">기업코드</th><th style="text-align:left;width:180px">기업명</th><th style="width:84px">연수원코드</th><th style="text-align:left;width:150px">연수원명</th><th style="width:80px">대상자 수</th><th style="width:150px">1인당 평균 누적 인정시간</th><th style="width:90px">이수 인원수</th><th style="width:70px">이수율</th><th style="width:110px">총 교육비</th><th style="width:90px">사업장규모</th><th style="width:76px">지원 비율</th><th style="width:130px">정부지원금(예상)</th><th style="width:130px">훈련결과보고서</th></tr></thead>
           <tbody>${rows.length ? slice.map((r,i)=>`<tr>
             <td><input type="checkbox" aria-label="${escapeHtml(r.name)} 선택" ${asd.sel.has(r.key)?'checked':''} onchange="asdToggle('${r.key}', this.checked)"></td>
             <td>${off0 + i + 1}</td><td>${r.code}</td>
@@ -3011,14 +3015,14 @@ function renderStatsDetail(){
     </div>`;
   asdRenderDl();
 }
-// [결과보고서 다운로드] — 체크한 보고서. 선택 0건이면 비활성(회색)
+// [훈련결과보고서 다운로드] — 체크한 보고서. 선택 0건이면 비활성(회색)
 function asdRenderDl(){
   const n = asd.sel.size, on = n > 0;
   document.getElementById('asdDl').innerHTML = `<span style="font-size:11px;color:var(--text-sub);align-self:center;margin-right:4px">선택 ${n}건</span>`
-    + (on ? `<button class="btn btn-primary" onclick="openReportModal([...asd.sel])">${DL_ICON}결과보고서 다운로드</button>`
-          : `<button class="btn btn-off" disabled>${DL_ICON}결과보고서 다운로드</button>`);
+    + (on ? `<button class="btn btn-primary" onclick="openReportModal([...asd.sel])">${DL_ICON}훈련결과보고서 다운로드</button>`
+          : `<button class="btn btn-off" disabled>${DL_ICON}훈련결과보고서 다운로드</button>`);
   const all = document.getElementById('asdAll'), ids = asd.pageCodes || [];
-  if(all){ const k = ids.filter(c => asd.sel.has(c)).length; all.checked = ids.length > 0 && k === ids.length; all.indeterminate = k > 0 && k < ids.length; }
+  if(all){ const k = ids.filter(c => asd.sel.has(c)).length; all.checked = ids.length > 0 && k === ids.length; all.indeterminate = false; }
 }
 function asdToggle(c, on){ on ? asd.sel.add(c) : asd.sel.delete(c); asdRenderDl(); }
 function asdToggleAll(on){ (asd.pageCodes || []).forEach(c => on ? asd.sel.add(c) : asd.sel.delete(c)); renderStatsDetail(); }
@@ -3029,18 +3033,16 @@ function asdSearch(){
 }
 function asdReset(){ asd.form = asdInit(); asd.applied = asdInit(); asd.sel.clear(); asd.page = 1; renderStatsDetail(); }
 function asdMovePage(n){ asd.page = n; renderStatsDetail(); }   // 선택 유지
-// ── 결과보고서 다운로드 레이어 팝업 — 출력 형태 선택(요약 보고서 / 상세 데이터). 선택한 형태만 파일 생성
+// ── 훈련결과보고서 다운로드 레이어 팝업 — 출력 형태 선택(요약 보고서 / 상세 데이터). 선택한 형태만 파일 생성
 let reportKeys = [];
 // 출력 형태 — 요약 보고서 / 상세 데이터 복수 선택. 디폴트 요약 보고서. 0개 선택 시 [다운로드] 비활성
 const reportTypes = () => [...document.querySelectorAll('input[name="reportType"]:checked')].map(x => x.value);
 function reportTypeChange(){
-  const t = reportTypes(), files = reportKeys.length * t.length, ok = document.getElementById('reportModalOk');
+  const t = reportTypes(), ok = document.getElementById('reportModalOk');
   ok.disabled = !t.length; ok.style.opacity = t.length ? '' : '.45'; ok.style.cursor = t.length ? '' : 'not-allowed';
-  document.getElementById('reportModalZip').style.display = files > 1 ? '' : 'none';
 }
 function openReportModal(keys){
   reportKeys = keys;
-  document.getElementById('reportModalCount').textContent = `선택한 보고서 ${keys.length}건`;
   document.querySelectorAll('input[name="reportType"]').forEach(x => x.checked = x.value === 'summary');
   reportTypeChange();
   document.getElementById('reportModal').classList.add('show');
@@ -3051,7 +3053,7 @@ function submitReport(){
   if(!t.length) return;
   const label = t.map(v => v === 'summary' ? '요약 보고서' : '상세 데이터').join(' · ');
   closeReportModal();
-  downloadExcel(`결과보고서(${label}) ${reportKeys.length}건의 파일 생성이 시작되었습니다.<br>생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.`);
+  downloadExcel(`훈련결과보고서(${label}) ${reportKeys.length}건의 파일 생성이 시작되었습니다.<br>생성 상태와 다운로드는 파일 다운로드 페이지에서 확인할 수 있습니다.`);
 }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
 
